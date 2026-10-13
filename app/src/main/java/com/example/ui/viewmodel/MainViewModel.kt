@@ -779,6 +779,101 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // =============================================================================================
+    // MIXTAPE BUILDER (DJ Studio) — ordered tracks + transitions, rendered to one file
+    // =============================================================================================
+
+    data class MixPlanItem(
+        val key: String = java.util.UUID.randomUUID().toString(),
+        val song: Song,
+        val inMs: Long = 0L,
+        val outMs: Long = song.durationMs,
+        val gain: Float = 1f,
+        val transition: com.example.audio.MixRenderer.Transition = com.example.audio.MixRenderer.Transition.CROSSFADE,
+        val transitionSeconds: Float = com.example.audio.MixRenderer.Transition.CROSSFADE.defaultSeconds.toFloat(),
+        val drop: com.example.audio.MixRenderer.OneShot = com.example.audio.MixRenderer.OneShot.NONE
+    ) {
+        fun toMixTrack() = com.example.audio.MixRenderer.MixTrack(
+            uri = song.uri,
+            inMs = inMs,
+            outMs = if (outMs > 0 && outMs < song.durationMs - 250) outMs else -1L,
+            gain = gain,
+            transition = transition,
+            transitionSeconds = transitionSeconds,
+            drop = drop
+        )
+    }
+
+    /** Preview state: which transition (by the key of the track it leaves) is rendering / ready. */
+    data class MixPreviewState(val renderingKey: String? = null, val readyKey: String? = null, val file: String? = null)
+
+    private val _mixPlan = MutableStateFlow<List<MixPlanItem>>(emptyList())
+    val mixPlan: StateFlow<List<MixPlanItem>> = _mixPlan.asStateFlow()
+
+    private val _mixPreview = MutableStateFlow(MixPreviewState())
+    val mixPreview: StateFlow<MixPreviewState> = _mixPreview.asStateFlow()
+
+    fun addToMix(song: Song) {
+        _mixPlan.update { it + MixPlanItem(song = song) }
+    }
+
+    fun removeFromMix(key: String) {
+        _mixPlan.update { list -> list.filterNot { it.key == key } }
+    }
+
+    fun moveInMix(key: String, delta: Int) {
+        _mixPlan.update { list ->
+            val i = list.indexOfFirst { it.key == key }
+            val j = i + delta
+            if (i < 0 || j !in list.indices) list else list.toMutableList().apply { add(j, removeAt(i)) }
+        }
+    }
+
+    fun updateMixItem(item: MixPlanItem) {
+        _mixPlan.update { list -> list.map { if (it.key == item.key) item else it } }
+    }
+
+    fun clearMix() {
+        _mixPlan.value = emptyList()
+    }
+
+    /** Render ~20 s around the transition after [key] so it can be auditioned before exporting. */
+    fun previewTransition(key: String) {
+        val list = _mixPlan.value
+        val i = list.indexOfFirst { it.key == key }
+        if (i < 0 || i >= list.lastIndex) return
+        val a = list[i]
+        val b = list[i + 1]
+        val context = getApplication<Application>()
+        playerEngine.pause()
+        _mixPreview.value = MixPreviewState(renderingKey = key)
+        viewModelScope.launch {
+            try {
+                val file = withContext(Dispatchers.IO) {
+                    com.example.audio.MixRenderer.renderTransitionPreview(context, a.toMixTrack(), a.song.durationMs, b.toMixTrack())
+                }
+                _mixPreview.value = MixPreviewState(readyKey = key, file = file.absolutePath)
+            } catch (e: Exception) {
+                _mixPreview.value = MixPreviewState()
+                _statusMessage.value = "Preview failed: ${e.message ?: "couldn't read the audio"}"
+            }
+        }
+    }
+
+    fun clearMixPreview() {
+        _mixPreview.value = MixPreviewState()
+    }
+
+    fun exportMixtape(title: String, artist: String, format: StudioRenderEngine.OutputFormat, targetPlaylist: String?) {
+        val tracks = _mixPlan.value.map { it.toMixTrack() }
+        val context = getApplication<Application>()
+        val finalTitle = title.ifBlank { "Mixtape ${java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date())}" }
+        val art = _mixPlan.value.firstOrNull { !it.song.albumArtUri.isNullOrBlank() }?.song?.albumArtUri
+        runStudioRender("Rendering mixtape", finalTitle, artist.ifBlank { "Mixtape Pro DJ" }, art, targetPlaylist, isRingtone = false) { progress ->
+            com.example.audio.MixRenderer.exportMix(context, tracks, finalTitle, format, progress)
+        }
+    }
+
     fun importGoogleDriveLink(link: String, title: String, artist: String) {
         viewModelScope.launch {
             try {

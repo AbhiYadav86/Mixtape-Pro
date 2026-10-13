@@ -274,12 +274,12 @@ object StudioRenderEngine {
     // Output
     // =============================================================================================
 
-    private interface PcmSink {
+    internal interface PcmSink {
         /** Write [frames] interleaved stereo float frames from [data]. */
         fun write(data: FloatArray, frames: Int)
     }
 
-    private fun writeOutput(
+    internal fun writeOutput(
         context: Context,
         title: String,
         format: OutputFormat,
@@ -363,7 +363,7 @@ object StudioRenderEngine {
         }
     }
 
-    private class WavFileSink(private val file: File) : PcmSink, AutoCloseable {
+    internal class WavFileSink(private val file: File) : PcmSink, AutoCloseable {
         private val out = FileOutputStream(file).buffered(1 shl 16)
         private val bytes = ByteBuffer.allocate(4096 * CHANNELS * 2).order(ByteOrder.LITTLE_ENDIAN)
         var framesWritten = 0L
@@ -524,7 +524,7 @@ object StudioRenderEngine {
         return -1
     }
 
-    private fun estimateFrames(context: Context, part: RenderPart): Long {
+    internal fun estimateFrames(context: Context, part: RenderPart): Long {
         val total = durationMs(context, part.uri)
         val end = if (part.endMs > 0) part.endMs else total
         return ((end - part.startMs).coerceAtLeast(0L)) * SAMPLE_RATE / 1000L
@@ -535,7 +535,7 @@ object StudioRenderEngine {
      * range [startMs, endMs] of any file MediaExtractor understands. Mono is duplicated to
      * both channels, multichannel is down-mixed, other sample rates are linearly resampled.
      */
-    private class DecodedPcmSource(
+    internal class DecodedPcmSource(
         context: Context,
         uri: Uri,
         startMs: Long,
@@ -748,7 +748,7 @@ object StudioRenderEngine {
     }
 
     /** Simple downward noise gate with smoothing — removes hiss/room noise between phrases. */
-    private class NoiseGate(thresholdDb: Float) {
+    internal class NoiseGate(thresholdDb: Float) {
         private val threshold = Math.pow(10.0, thresholdDb / 20.0).toFloat()
         private var env = 0f
         private var gain = 1f

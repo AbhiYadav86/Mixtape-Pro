@@ -64,6 +64,8 @@ fun PlayerScreen(
     val librarySongs by viewModel.librarySongs.collectAsState()
     val enrichmentProgress by viewModel.enrichmentProgress.collectAsState()
     val studioExport by viewModel.studioExport.collectAsState()
+    val mixPlan by viewModel.mixPlan.collectAsState()
+    val mixPreview by viewModel.mixPreview.collectAsState()
     val allPlaylists by viewModel.allPlaylists.collectAsState()
     val selectedPlaylist by viewModel.selectedPlaylist.collectAsState()
     val playlistSongs by viewModel.playlistSongs.collectAsState()
@@ -732,7 +734,19 @@ fun PlayerScreen(
                                 onExportVocals = { song, strength, bass, format ->
                                     viewModel.exportVocalRemoved(song, strength, bass, format)
                                 },
-                                onDismissExport = { viewModel.clearStudioExportMessage() }
+                                onDismissExport = { viewModel.clearStudioExportMessage() },
+                                mixPlan = mixPlan,
+                                mixPreview = mixPreview,
+                                onMixAdd = { viewModel.addToMix(it) },
+                                onMixRemove = { viewModel.removeFromMix(it) },
+                                onMixMove = { key, d -> viewModel.moveInMix(key, d) },
+                                onMixUpdate = { viewModel.updateMixItem(it) },
+                                onMixClear = { viewModel.clearMix() },
+                                onMixPreview = { viewModel.previewTransition(it) },
+                                onMixPreviewDone = { viewModel.clearMixPreview() },
+                                onMixExport = { title, artist, format ->
+                                    viewModel.exportMixtape(title, artist, format, "DJ Studio Mixtapes")
+                                }
                             )
                         }
                         5 -> {
