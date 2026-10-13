@@ -320,12 +320,12 @@ fun StudioHardwareButton(
                             imageVector = icon,
                             contentDescription = null,
                             tint = contentColor,
-                            modifier = Modifier.size((height.value * 0.38f).dp)
+                            modifier = Modifier.size((height.value * 0.42f).dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        if (text.isNotEmpty() || subText != null) Spacer(modifier = Modifier.width(4.dp))
                     }
 
-                    Column(
+                    if (text.isNotEmpty() || subText != null) Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f, fill = false)
                     ) {
@@ -503,7 +503,7 @@ private fun DJSoundPad(
 
     Box(
         modifier = modifier
-            .height(46.dp)
+            .heightIn(min = 58.dp)
             .background(Color(0xFF0D0F16), RoundedCornerShape(6.dp))
             .border(1.5.dp, skin.chassisBorderColor, RoundedCornerShape(6.dp))
             .padding(2.dp)
@@ -521,15 +521,18 @@ private fun DJSoundPad(
             .padding(2.dp),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(padNumber, fontSize = 7.5.sp, fontFamily = FontFamily.Monospace, color = Color(0xFF94A3B8))
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Text(padNumber, fontSize = 9.sp, fontFamily = FontFamily.Monospace, color = if (isPressed) Color.Black else Color(0xFF94A3B8), maxLines = 1)
             Text(
                 label,
-                fontSize = 9.sp,
+                fontSize = 11.sp,
+                lineHeight = 13.sp,
                 fontWeight = FontWeight.Black,
-                fontFamily = FontFamily.Monospace,
+                fontFamily = FontFamily.SansSerif,
                 color = if (isPressed) Color.Black else Color.White,
-                maxLines = 1
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -1402,9 +1405,9 @@ fun DJStudioScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("◀ BUS L [${((1f - masterCrossfader) * 100).toInt()}%]", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = skin.accentColor, fontFamily = FontFamily.Monospace)
-                        Text("ASSIGNABLE CROSSFADER", fontSize = 11.sp, fontWeight = FontWeight.Black, color = skin.titleBarTextColor, fontFamily = FontFamily.Monospace)
-                        Text("BUS R [${(masterCrossfader * 100).toInt()}%] ▶", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = skin.secondaryAccentColor, fontFamily = FontFamily.Monospace)
+                        Text("◀ L ${((1f - masterCrossfader) * 100).toInt()}%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = skin.accentColor, fontFamily = FontFamily.Monospace, maxLines = 1, softWrap = false)
+                        Text("CROSSFADER", fontSize = 12.sp, fontWeight = FontWeight.Black, color = skin.titleBarTextColor, fontFamily = FontFamily.Monospace, maxLines = 1, softWrap = false)
+                        Text("${(masterCrossfader * 100).toInt()}% R ▶", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = skin.secondaryAccentColor, fontFamily = FontFamily.Monospace, maxLines = 1, softWrap = false)
                     }
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -1442,6 +1445,7 @@ fun DJStudioScreen(
                             },
                             skin = skin,
                             theme = StudioButtonTheme.RED_REC,
+                            showLed = false,
                             isActive = masterCrossfader == 0f,
                             modifier = Modifier.weight(1f)
                         )
@@ -1456,6 +1460,7 @@ fun DJStudioScreen(
                             },
                             skin = skin,
                             theme = StudioButtonTheme.SLATE_UTILITY,
+                            showLed = false,
                             isActive = masterCrossfader == 0.5f,
                             modifier = Modifier.weight(1f)
                         )
@@ -1470,13 +1475,15 @@ fun DJStudioScreen(
                             },
                             skin = skin,
                             theme = StudioButtonTheme.RED_REC,
+                            showLed = false,
                             isActive = masterCrossfader == 1.0f,
                             modifier = Modifier.weight(1f)
                         )
 
                         StudioHardwareButton(
-                            text = "EQ RACK",
-                            subText = "DSP PEQ",
+                            text = "EQ",
+                            subText = "RACK",
+                            showLed = false,
                             onClick = { onOpenEqualizerDialog() },
                             skin = skin,
                             theme = StudioButtonTheme.AMBER_CUE,

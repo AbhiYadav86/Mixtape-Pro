@@ -65,84 +65,91 @@ fun PlaylistScreen(
             .background(skin.chassisBackground)
             .padding(10.dp)
     ) {
-        // Create Playlist Action Bar
+        // Title
+        Text(
+            text = "MIXTAPES (${filteredPlaylists.size})",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.SansSerif,
+            color = skin.lcdTextColor,
+            maxLines = 1
+        )
+        Text(
+            text = "Cassette C-90 & Compact Disc Vault",
+            fontSize = 12.sp,
+            fontFamily = FontFamily.SansSerif,
+            color = Color(0xFFB4BFCE),
+            maxLines = 1
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Actions: full-width buttons so labels are always readable
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column {
+            // New Mixtape Button
+            Button(
+                onClick = {
+                    RetroSoundEffects.playClick(RetroSoundEffects.SoundType.WINAMP_CLICK)
+                    showCreateDialog = true
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = skin.accentColor),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 46.dp)
+                    .testTag("create_playlist_button"),
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    tint = Color.Black,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "VINTAGE MIXTAPES (${filteredPlaylists.size})",
-                    fontSize = 15.sp,
+                    text = "NEW MIXTAPE",
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.SansSerif,
-                    color = skin.lcdTextColor
-                )
-                Text(
-                    text = "Cassette C-90 & Compact Disc Vault",
-                    fontSize = 11.sp,
-                    fontFamily = FontFamily.SansSerif,
-                    color = Color(0xFF94A3B8)
+                    color = Color.Black,
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                // Restore Curated 90s Mixtapes
-                OutlinedButton(
-                    onClick = {
-                        RetroSoundEffects.playClick(RetroSoundEffects.SoundType.CASSETTE_CLACK)
-                        onRestoreCuratedMixtapes()
-                    },
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = skin.accentColor),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, skin.accentColor.copy(alpha = 0.6f)),
-                    modifier = Modifier.height(42.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.AutoAwesome,
-                        contentDescription = "Restore Mixtapes",
-                        modifier = Modifier.size(16.dp),
-                        tint = skin.accentColor
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "90s PRESETS",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
-
-                // New Mixtape Button
-                Button(
-                    onClick = {
-                        RetroSoundEffects.playClick(RetroSoundEffects.SoundType.WINAMP_CLICK)
-                        showCreateDialog = true
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = skin.accentColor),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier
-                        .height(42.dp)
-                        .testTag("create_playlist_button"),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "New Mixtape",
-                        tint = Color.Black,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "RECORD TAPE",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.SansSerif,
-                        color = Color.Black
-                    )
-                }
+            // Restore Curated 90s Mixtapes
+            OutlinedButton(
+                onClick = {
+                    RetroSoundEffects.playClick(RetroSoundEffects.SoundType.CASSETTE_CLACK)
+                    onRestoreCuratedMixtapes()
+                },
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = skin.accentColor),
+                border = androidx.compose.foundation.BorderStroke(1.dp, skin.accentColor.copy(alpha = 0.7f)),
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 46.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = skin.accentColor
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "90s PRESETS",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.SansSerif,
+                    maxLines = 1,
+                    softWrap = false
+                )
             }
         }
 

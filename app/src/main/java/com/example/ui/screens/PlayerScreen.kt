@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -893,7 +894,7 @@ private fun RetroTitleBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(34.dp)
+            .heightIn(min = 44.dp)
             .background(skin.titleBarBackground)
             .border(1.dp, skin.chassisBorderColor)
             .padding(horizontal = 8.dp),
@@ -904,36 +905,39 @@ private fun RetroTitleBar(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // App Title & Skin identifier with Retro Note Logo
+            // App Title & Skin identifier with Retro Note Logo (skin name on its own line so it is never cut)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
-                modifier = Modifier.weight(1f, fill = false)
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.weight(1f)
             ) {
                 androidx.compose.foundation.Image(
                     painter = androidx.compose.ui.res.painterResource(id = com.example.R.drawable.ra98_note_logo_1787601220471),
-                    contentDescription = "Retro Note Logo",
+                    contentDescription = "Mixtape Pro logo",
                     modifier = Modifier
-                        .size(18.dp)
+                        .size(22.dp)
                         .clip(RoundedCornerShape(3.dp))
                 )
-                Text(
-                    text = "MIXTAPE PRO",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.SansSerif,
-                    color = skin.titleBarTextColor,
-                    maxLines = 1
-                )
-                Text(
-                    text = "[${skin.name}]",
-                    fontSize = 10.sp,
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.SemiBold,
-                    color = skin.accentColor,
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "MIXTAPE PRO",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.SansSerif,
+                        color = skin.titleBarTextColor,
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                    Text(
+                        text = skin.name,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.SemiBold,
+                        color = skin.accentColor,
+                        maxLines = 1,
+                        modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 1500, repeatDelayMillis = 2500)
+                    )
+                }
             }
 
             // Title bar quick buttons: Skins, Eq, and Quit with tactile feel and drop shadows

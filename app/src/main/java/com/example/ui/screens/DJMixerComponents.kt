@@ -494,43 +494,51 @@ fun DJTurntableDeck4Channel(
                 horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 StudioHardwareButton(
-                    text = if (isPlaying) "PAUSE" else "PLAY",
+                    text = "",
+                    icon = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    showLed = false,
                     onClick = onTogglePlay,
                     skin = skin,
                     theme = if (isPlaying) StudioButtonTheme.RED_REC else StudioButtonTheme.GREEN_PLAY,
                     isActive = isPlaying,
-                    height = 28.dp,
+                    height = 34.dp,
                     fontSize = 8.sp,
                     modifier = Modifier.weight(1f)
                 )
 
                 StudioHardwareButton(
-                    text = "CUE",
+                    text = "",
+                    icon = Icons.Default.FirstPage,
+                    showLed = false,
                     onClick = onCue,
                     skin = skin,
                     theme = StudioButtonTheme.AMBER_CUE,
-                    height = 28.dp,
+                    height = 34.dp,
                     fontSize = 8.sp,
                     modifier = Modifier.weight(1f)
                 )
 
                 StudioHardwareButton(
-                    text = "SYNC",
+                    text = "",
+                    icon = Icons.Default.Sync,
+                    showLed = false,
                     onClick = onSync,
                     skin = skin,
                     theme = StudioButtonTheme.CYAN_SYNC,
-                    height = 28.dp,
+                    height = 34.dp,
                     fontSize = 8.sp,
                     modifier = Modifier.weight(1f)
                 )
 
                 StudioHardwareButton(
-                    text = if (isLoopActive) "LOOP ON" else "LOOP",
+                    text = "",
+                    icon = Icons.Default.Repeat,
+                    showLed = false,
                     onClick = onToggleLoop,
                     skin = skin,
                     theme = StudioButtonTheme.CHAMPAGNE_GOLD,
                     isActive = isLoopActive,
-                    height = 28.dp,
+                    height = 34.dp,
                     fontSize = 8.sp,
                     modifier = Modifier.weight(1f)
                 )
