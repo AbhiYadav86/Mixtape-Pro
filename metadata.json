@@ -1,0 +1,6 @@
+{
+  "name": "RetroAmp 99",
+  "description": "Audiophile MP3 Player with Surgical Parametric EQ (variable Q), 10-Band Graphic Equalizer, DSP Tube Warmth, Stereo Crossfeed, animated visualizers, and vintage Hi-Fi skins.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
