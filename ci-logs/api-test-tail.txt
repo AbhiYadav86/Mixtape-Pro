@@ -1,7 +1,7 @@
 The input changes require a full rebuild for incremental task ':app:kspDebugUnitTestKotlin'.
-Stored cache entry for task ':app:kspDebugUnitTestKotlin' with cache key dfa0ac3d9d21358241aa0362a6ae8f63
-Resolve mutations for :app:compileDebugUnitTestKotlin (Thread[#84,Execution worker Thread 2,5,main]) started.
-:app:compileDebugUnitTestKotlin (Thread[#82,included builds,5,main]) started.
+Stored cache entry for task ':app:kspDebugUnitTestKotlin' with cache key f21bba5d2dd067e2787988d3ac8fd2cd
+Resolve mutations for :app:compileDebugUnitTestKotlin (Thread[#83,Execution worker,5,main]) started.
+:app:compileDebugUnitTestKotlin (Thread[#83,Execution worker,5,main]) started.
 
 > Task :app:compileDebugUnitTestKotlin
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
@@ -12,13 +12,13 @@ file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
-Build cache key for BuildToolsApiClasspathEntrySnapshotTransform: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/intermediates/compile_app_classes_jar/debug/bundleDebugClassesToCompileJar/classes.jar is 00d73e9efd2f7d64eee29c99d94ac110
-Stored cache entry for BuildToolsApiClasspathEntrySnapshotTransform: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/intermediates/compile_app_classes_jar/debug/bundleDebugClassesToCompileJar/classes.jar with cache key 00d73e9efd2f7d64eee29c99d94ac110
+Build cache key for BuildToolsApiClasspathEntrySnapshotTransform: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/intermediates/compile_app_classes_jar/debug/bundleDebugClassesToCompileJar/classes.jar is 22d89e5ea28338af8c6cd3c63e521b2c
+Stored cache entry for BuildToolsApiClasspathEntrySnapshotTransform: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/intermediates/compile_app_classes_jar/debug/bundleDebugClassesToCompileJar/classes.jar with cache key 22d89e5ea28338af8c6cd3c63e521b2c
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
-Build cache key for task ':app:compileDebugUnitTestKotlin' is ffef013feb2291d21507a836f3c9fb8b
+Build cache key for task ':app:compileDebugUnitTestKotlin' is fd704c64377d06b0ba44665ba5114bfe
 Task ':app:compileDebugUnitTestKotlin' is not up-to-date because:
   No history is available.
 The input changes require a full rebuild for incremental task ':app:compileDebugUnitTestKotlin'.
@@ -73,10 +73,10 @@ Script file extensions:
 Using Kotlin/JVM incremental compilation
 [KOTLIN] Kotlin compilation 'jdkHome' argument: /usr/lib/jvm/temurin-21-jdk-amd64
 Finished executing kotlin compiler using IN_PROCESS strategy
-Stored cache entry for task ':app:compileDebugUnitTestKotlin' with cache key ffef013feb2291d21507a836f3c9fb8b
+Stored cache entry for task ':app:compileDebugUnitTestKotlin' with cache key fd704c64377d06b0ba44665ba5114bfe
+Resolve mutations for :app:processDebugUnitTestJavaRes (Thread[#85,Execution worker Thread 3,5,main]) started.
+:app:processDebugUnitTestJavaRes (Thread[#85,Execution worker Thread 3,5,main]) started.
 Resolve mutations for :app:compileDebugUnitTestJavaWithJavac (Thread[#82,included builds,5,main]) started.
-Resolve mutations for :app:processDebugUnitTestJavaRes (Thread[#84,Execution worker Thread 2,5,main]) started.
-:app:processDebugUnitTestJavaRes (Thread[#84,Execution worker Thread 2,5,main]) started.
 :app:compileDebugUnitTestJavaWithJavac (Thread[#82,included builds,5,main]) started.
 
 > Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
@@ -94,30 +94,30 @@ file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/r
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/resources', not found
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/resources', not found
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/resources', not found
-Resolve mutations for :app:testDebugUnitTest (Thread[#84,Execution worker Thread 2,5,main]) started.
-:app:testDebugUnitTest (Thread[#84,Execution worker Thread 2,5,main]) started.
+Resolve mutations for :app:testDebugUnitTest (Thread[#85,Execution worker Thread 3,5,main]) started.
+:app:testDebugUnitTest (Thread[#85,Execution worker Thread 3,5,main]) started.
 Gradle Test Executor 1 started executing tests.
 
 > Task :app:testDebugUnitTest
-Build cache key for task ':app:testDebugUnitTest' is a0fedb0868d1d31a91ae30849d84099f
+Build cache key for task ':app:testDebugUnitTest' is 63226feb8d5ec77eec5a8be6051ff42c
 Task ':app:testDebugUnitTest' is not up-to-date because:
   No history is available.
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/resources', not found
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/classes', not found
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/intermediates/javac/debugUnitTest/compileDebugUnitTestJavaWithJavac/classes', not found
-Starting process 'Gradle Test Executor 1'. Working directory: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app Command: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java -Djava.awt.headless=true -Djava.library.path=/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib:/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/jniLibs:/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/jniLibs -Dorg.gradle.internal.worker.tmpdir=/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/tmp/testDebugUnitTest/work --add-opens=java.base/java.io=ALL-UNNAMED @/home/runner/.gradle/.tmp/gradle-worker-classpath7110817861533980613txt -Xmx512m -Dfile.encoding=UTF-8 -Duser.country -Duser.language=en -Duser.variant -ea worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Test Executor 1'
+Starting process 'Gradle Test Executor 1'. Working directory: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app Command: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java -Djava.awt.headless=true -Djava.library.path=/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib:/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/jniLibs:/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/jniLibs -Dorg.gradle.internal.worker.tmpdir=/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/tmp/testDebugUnitTest/work --add-opens=java.base/java.io=ALL-UNNAMED @/home/runner/.gradle/.tmp/gradle-worker-classpath15889744467596795134txt -Xmx512m -Dfile.encoding=UTF-8 -Duser.country -Duser.language=en -Duser.variant -ea worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Test Executor 1'
 Successfully started process 'Gradle Test Executor 1'
 
 LiveApiCheckTest > liveApis STANDARD_OUT
-    ART    [Nickelback - Burn It to the Ground] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis110201164007194531/com.mixtapepro.player-dataDir/files/artwork/art_test_-1891660041.jpg
+    ART    [Nickelback - Burn It to the Ground] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis17697219667609893303/com.mixtapepro.player-dataDir/files/artwork/art_test_-1891660041.jpg
     LYRICS [Nickelback - Burn It to the Ground] -> 60 lines
-    ART    [Nickelback - When We Stand Together] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis110201164007194531/com.mixtapepro.player-dataDir/files/artwork/art_test_-1326496848.jpg
+    ART    [Nickelback - When We Stand Together] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis17697219667609893303/com.mixtapepro.player-dataDir/files/artwork/art_test_-1326496848.jpg
     LYRICS [Nickelback - When We Stand Together] -> 60 lines
-    ART    [Chris Isaak - Wicked Game] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis110201164007194531/com.mixtapepro.player-dataDir/files/artwork/art_test_415990489.jpg
+    ART    [Chris Isaak - Wicked Game] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis17697219667609893303/com.mixtapepro.player-dataDir/files/artwork/art_test_415990489.jpg
     LYRICS [Chris Isaak - Wicked Game] -> 38 lines
-    ART    [The Righteous Brothers - You've Lost That Lovin' Feelin'] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis110201164007194531/com.mixtapepro.player-dataDir/files/artwork/art_test_58216561.jpg
+    ART    [The Righteous Brothers - You've Lost That Lovin' Feelin'] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis17697219667609893303/com.mixtapepro.player-dataDir/files/artwork/art_test_58216561.jpg
     LYRICS [The Righteous Brothers - You've Lost That Lovin' Feelin'] -> 41 lines
-    ART    [Unknown Artist - Kenny Loggins - Playing With the Boys] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis110201164007194531/com.mixtapepro.player-dataDir/files/artwork/art_test_960008533.jpg
+    ART    [Unknown Artist - Kenny Loggins - Playing With the Boys] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis17697219667609893303/com.mixtapepro.player-dataDir/files/artwork/art_test_960008533.jpg
     LYRICS [Unknown Artist - Kenny Loggins - Playing With the Boys] -> 50 lines
     ART    [RAJIV DIXIT - Viruddh Bhojan kabhi na] -> NONE
     LYRICS [RAJIV DIXIT - Viruddh Bhojan kabhi na] -> NONE
@@ -130,21 +130,21 @@ Gradle Test Executor 1 finished executing tests.
 
 > Task :app:testDebugUnitTest
 Generating HTML test report...
-Finished generating test html results (0.026 secs) into: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/reports/tests/testDebugUnitTest
+Finished generating test html results (0.063 secs) into: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/reports/tests/testDebugUnitTest
 Finished generating test XML results (0.003 secs) into: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/test-results/testDebugUnitTest
-Stored cache entry for task ':app:testDebugUnitTest' with cache key a0fedb0868d1d31a91ae30849d84099f
-Resolve mutations for :app:finalizeTestRoborazziDebug (Thread[#84,Execution worker Thread 2,5,main]) started.
-:app:finalizeTestRoborazziDebug (Thread[#84,Execution worker Thread 2,5,main]) started.
+Stored cache entry for task ':app:testDebugUnitTest' with cache key 63226feb8d5ec77eec5a8be6051ff42c
+Resolve mutations for :app:finalizeTestRoborazziDebug (Thread[#85,Execution worker Thread 3,5,main]) started.
+:app:finalizeTestRoborazziDebug (Thread[#85,Execution worker Thread 3,5,main]) started.
 
 > Task :app:finalizeTestRoborazziDebug SKIPPED
 Roborazzi: roborazziTestFinalizer.onlyIf doesRoborazziRun false
 Skipping task ':app:finalizeTestRoborazziDebug' as task onlyIf 'Task satisfies onlyIf spec' is false.
-Build bc5e8d9c-3ab4-4b6f-82dc-41e24d479c78 is started
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1791899848206.json
-Build bc5e8d9c-3ab4-4b6f-82dc-41e24d479c78 is closed
+Build 6d80049e-f916-4d85-9d31-6ebeeaf1f051 is started
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1791901072656.json
+Build 6d80049e-f916-4d85-9d31-6ebeeaf1f051 is closed
 
-See the complete report at file:///home/runner/work/Mixtape-Pro/Mixtape-Pro/build/reports/configuration-cache/9ef7djwhfoewxkdc5lov9ln22/eurg07c02wohmwls4gihayfer/configuration-cache-report.html
+See the complete report at file:///home/runner/work/Mixtape-Pro/Mixtape-Pro/build/reports/configuration-cache/cc77o8msgn2dinxl003rs8910/eurg07c02wohmwls4gihayfer/configuration-cache-report.html
 
-BUILD SUCCESSFUL in 1m
+BUILD SUCCESSFUL in 1m 10s
 33 actionable tasks: 17 executed, 16 from cache
 Configuration cache entry stored.
