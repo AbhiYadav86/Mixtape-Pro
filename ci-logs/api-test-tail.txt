@@ -1,121 +1,123 @@
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/a30c2c956972d7e3e6881d99ee55d95a/transformed/lifecycle-process-2.8.7 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/32616cf17115e76a874068c9cfe5a7bf/transformed/lifecycle-viewmodel-release because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/3787bd22491518da5e87c8b274e94464/transformed/lifecycle-viewmodel-2.8.7 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/4f2a5dae30f59ac4f14df0b055e06ce0/transformed/lifecycle-livedata-core-2.8.7 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/db9faabfb9ef4ab921a6ff2d6ff3e69a/transformed/lifecycle-runtime-release because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/3e78bf4513c9c49bda8ae19b4e19ac84/transformed/lifecycle-viewmodel-ktx-2.8.7 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/baf54d67679644fbc129f2c870e1dd12/transformed/lifecycle-viewmodel-compose-release because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/c13e8fa95696a929df4b724c36ccacc0/transformed/lifecycle-viewmodel-savedstate-2.8.7 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/7737dc07d4118a8c20d329a47ede4ce3/transformed/lifecycle-runtime-compose-release because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/491153fd955a3c4ef715de4ed46b34cd/transformed/accompanist-drawablepainter-0.32.0 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/7abad6c73c1076b517e5ea2ef1d0e286/transformed/lifecycle-runtime-ktx-release because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/8b557893b7d747e137ec6427440dfa77/transformed/runtime-saveable-release because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/cf2cac56b0b11f0a65f7217094915920/transformed/runtime-release because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/de6cc07eb0fc6749673e82990a166541/transformed/profileinstaller-1.4.0 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/43cb1e5a70c7d8580d0584e76fabb77c/transformed/datastore-core-release because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/8a5a35f8c5aa9415b1b28f4a43509d84/transformed/datastore-release because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/147e4e52d21c2abd69eeacb2acf88555/transformed/datastore-preferences-core-release because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/a55a9587bd052c17d2f8ace90c957707/transformed/datastore-preferences-release because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/268f7eab066d351ddb55e9f1606d8395/transformed/play-services-tasks-18.4.0 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/b62553e81b30337b0e0d014039cd5ff4/transformed/fragment-1.1.0 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/84fd4cee78894346a42843233300f6a1/transformed/play-services-basement-18.9.0 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/07391326e1afd924d8ae7ff37cebd686/transformed/activity-1.10.1 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/113ed28c4e023a75dc7f2e33fc37d545/transformed/activity-ktx-1.10.1 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/ee3beaf8dbb16607ea1bb52490a66d0b/transformed/activity-compose-1.10.1 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/0eec6c0ca97b2331056c38c4f09e1b1c/transformed/material-icons-core-release because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/bcd4078c2af21a16613941a043f02a12/transformed/material-icons-extended-release because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/52b06b809d319fe8a91dd6c211add9a1/transformed/ui-test-manifest-1.7.0 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/32f230b7dd4468692d39de3e2bf08523/transformed/runner-1.5.2 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/40663fe11f6bf6fd0550fc9bc3871b1b/transformed/ui-release because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/cd2b9dbbe16e2a12fb15124f90c9af79/transformed/storage-1.6.0 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/a69ef420d1529afe4d9348ff5aeeef5f/transformed/annotation-1.0.1 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/7863e05a92443cb46670536d888c78ab/transformed/monitor-1.8.0 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/033eee8542bc82611092e6ba41cccd72/transformed/annotation-experimental-1.4.1 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/0ffeb886a61681c5635d97f9b25c3c80/transformed/core-viewtree-1.0.0 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/2178697af86128288faace66c102cf5d/transformed/versionedparcelable-1.1.1 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/2fe2284bfd885020aaa13e2f834d8725/transformed/security-crypto-1.1.0-alpha03 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/ec92bb25a56d31dd8819a7be8f3e9469/transformed/sqlite-framework-release because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/7ba10e701202e22587dae46cf566bcdf/transformed/firebase-components-19.0.0 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/878fe73e122a4f5156819032b8d9f41e/transformed/sqlite-release because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/3cc73eb0dad106d8e48bb35ebf27aa48/transformed/startup-runtime-1.1.1 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/be1d938fa94212c79466d66defe27e17/transformed/tracing-1.2.0 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/300da2230d856c4686a50f1f5a39df9e/transformed/core-runtime-2.2.0 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/f498bf048144905659b0be79c7511f27/transformed/interpolator-1.0.0 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/4f9a232e77ef880f42f78d85e65ba2ad/transformed/exifinterface-1.3.7 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/ea8e9b8592db98989fc1a08b39ea4834/transformed/espresso-idling-resource-3.7.0 because:
-  Caching not enabled.
-Caching disabled for AarTransform: /home/runner/.gradle/caches/9.3.1/transforms/c0b88fa184991782d8262e060c5e1ee4/transformed/core-common-2.0.4 because:
-  Caching not enabled.
-Build cache key for MockableJarTransform: /usr/local/lib/android/sdk/platforms/android-36.1/android.jar is a47457fed44893758d39205db3dd5677
-Calling mockable JAR artifact transform to create file: /home/runner/.gradle/caches/9.3.1/transforms/45ddef8d2cea7e40bbd1dd4e521a277b-54d7c707-1d3d-4e09-8ecf-1b8da5a89474/transformed/android.jar with input /usr/local/lib/android/sdk/platforms/android-36.1/android.jar
-Stored cache entry for MockableJarTransform: /usr/local/lib/android/sdk/platforms/android-36.1/android.jar with cache key a47457fed44893758d39205db3dd5677
-Build cache key for task ':app:testDebugUnitTest' is 2a105e2d3b3561e52a7b724a1d319bec
+The input changes require a full rebuild for incremental task ':app:kspDebugUnitTestKotlin'.
+Stored cache entry for task ':app:kspDebugUnitTestKotlin' with cache key dfa0ac3d9d21358241aa0362a6ae8f63
+Resolve mutations for :app:compileDebugUnitTestKotlin (Thread[#84,Execution worker Thread 2,5,main]) started.
+:app:compileDebugUnitTestKotlin (Thread[#82,included builds,5,main]) started.
+
+> Task :app:compileDebugUnitTestKotlin
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+Build cache key for BuildToolsApiClasspathEntrySnapshotTransform: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/intermediates/compile_app_classes_jar/debug/bundleDebugClassesToCompileJar/classes.jar is 00d73e9efd2f7d64eee29c99d94ac110
+Stored cache entry for BuildToolsApiClasspathEntrySnapshotTransform: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/intermediates/compile_app_classes_jar/debug/bundleDebugClassesToCompileJar/classes.jar with cache key 00d73e9efd2f7d64eee29c99d94ac110
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+Build cache key for task ':app:compileDebugUnitTestKotlin' is ffef013feb2291d21507a836f3c9fb8b
+Task ':app:compileDebugUnitTestKotlin' is not up-to-date because:
+  No history is available.
+The input changes require a full rebuild for incremental task ':app:compileDebugUnitTestKotlin'.
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/kotlin', not found
+Kotlin source files: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/java/com/example/ExampleRobolectricTest.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/java/com/example/ExampleUnitTest.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/java/com/example/LiveApiCheckTest.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /usr/lib/jvm/temurin-21-jdk-amd64
+Finished executing kotlin compiler using IN_PROCESS strategy
+Stored cache entry for task ':app:compileDebugUnitTestKotlin' with cache key ffef013feb2291d21507a836f3c9fb8b
+Resolve mutations for :app:compileDebugUnitTestJavaWithJavac (Thread[#82,included builds,5,main]) started.
+Resolve mutations for :app:processDebugUnitTestJavaRes (Thread[#84,Execution worker Thread 2,5,main]) started.
+:app:processDebugUnitTestJavaRes (Thread[#84,Execution worker Thread 2,5,main]) started.
+:app:compileDebugUnitTestJavaWithJavac (Thread[#82,included builds,5,main]) started.
+
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+Skipping task ':app:compileDebugUnitTestJavaWithJavac' as it has no source files and no previous output files.
+
+> Task :app:processDebugUnitTestJavaRes
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/resources', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/resources', not found
+Caching disabled for task ':app:processDebugUnitTestJavaRes' because:
+  Caching has been disabled for the task
+Task ':app:processDebugUnitTestJavaRes' is not up-to-date because:
+  No history is available.
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/resources', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/resources', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/resources', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/resources', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/resources', not found
+Resolve mutations for :app:testDebugUnitTest (Thread[#84,Execution worker Thread 2,5,main]) started.
+:app:testDebugUnitTest (Thread[#84,Execution worker Thread 2,5,main]) started.
+Gradle Test Executor 1 started executing tests.
+
+> Task :app:testDebugUnitTest
+Build cache key for task ':app:testDebugUnitTest' is a0fedb0868d1d31a91ae30849d84099f
 Task ':app:testDebugUnitTest' is not up-to-date because:
   No history is available.
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/resources', not found
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/classes', not found
 file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/intermediates/javac/debugUnitTest/compileDebugUnitTestJavaWithJavac/classes', not found
-Starting process 'Gradle Test Executor 1'. Working directory: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app Command: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java -Djava.awt.headless=true -Djava.library.path=/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib:/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/jniLibs:/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/jniLibs -Dorg.gradle.internal.worker.tmpdir=/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/tmp/testDebugUnitTest/work --add-opens=java.base/java.io=ALL-UNNAMED @/home/runner/.gradle/.tmp/gradle-worker-classpath1287087484298779037txt -Xmx512m -Dfile.encoding=UTF-8 -Duser.country -Duser.language=en -Duser.variant -ea worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Test Executor 1'
+Starting process 'Gradle Test Executor 1'. Working directory: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app Command: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java -Djava.awt.headless=true -Djava.library.path=/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib:/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/jniLibs:/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/jniLibs -Dorg.gradle.internal.worker.tmpdir=/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/tmp/testDebugUnitTest/work --add-opens=java.base/java.io=ALL-UNNAMED @/home/runner/.gradle/.tmp/gradle-worker-classpath7110817861533980613txt -Xmx512m -Dfile.encoding=UTF-8 -Duser.country -Duser.language=en -Duser.variant -ea worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Test Executor 1'
 Successfully started process 'Gradle Test Executor 1'
 
-Gradle Test Executor 1 started executing tests.
-
-> Task :app:testDebugUnitTest
-
 LiveApiCheckTest > liveApis STANDARD_OUT
-    ART    [Nickelback - Burn It to the Ground] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis6085855071658783214/com.mixtapepro.player-dataDir/files/artwork/art_test_-1891660041.jpg
+    ART    [Nickelback - Burn It to the Ground] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis110201164007194531/com.mixtapepro.player-dataDir/files/artwork/art_test_-1891660041.jpg
     LYRICS [Nickelback - Burn It to the Ground] -> 60 lines
-    ART    [Nickelback - When We Stand Together] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis6085855071658783214/com.mixtapepro.player-dataDir/files/artwork/art_test_-1326496848.jpg
+    ART    [Nickelback - When We Stand Together] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis110201164007194531/com.mixtapepro.player-dataDir/files/artwork/art_test_-1326496848.jpg
     LYRICS [Nickelback - When We Stand Together] -> 60 lines
-    ART    [Chris Isaak - Wicked Game] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis6085855071658783214/com.mixtapepro.player-dataDir/files/artwork/art_test_415990489.jpg
+    ART    [Chris Isaak - Wicked Game] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis110201164007194531/com.mixtapepro.player-dataDir/files/artwork/art_test_415990489.jpg
     LYRICS [Chris Isaak - Wicked Game] -> 38 lines
-    ART    [The Righteous Brothers - You've Lost That Lovin' Feelin'] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis6085855071658783214/com.mixtapepro.player-dataDir/files/artwork/art_test_58216561.jpg
+    ART    [The Righteous Brothers - You've Lost That Lovin' Feelin'] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis110201164007194531/com.mixtapepro.player-dataDir/files/artwork/art_test_58216561.jpg
     LYRICS [The Righteous Brothers - You've Lost That Lovin' Feelin'] -> 41 lines
-    ART    [Unknown Artist - Kenny Loggins - Playing With the Boys] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis6085855071658783214/com.mixtapepro.player-dataDir/files/artwork/art_test_960008533.jpg
+    ART    [Unknown Artist - Kenny Loggins - Playing With the Boys] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis110201164007194531/com.mixtapepro.player-dataDir/files/artwork/art_test_960008533.jpg
     LYRICS [Unknown Artist - Kenny Loggins - Playing With the Boys] -> 50 lines
     ART    [RAJIV DIXIT - Viruddh Bhojan kabhi na] -> NONE
     LYRICS [RAJIV DIXIT - Viruddh Bhojan kabhi na] -> NONE
@@ -128,23 +130,21 @@ Gradle Test Executor 1 finished executing tests.
 
 > Task :app:testDebugUnitTest
 Generating HTML test report...
-Finished generating test html results (0.03 secs) into: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/reports/tests/testDebugUnitTest
-Finished generating test XML results (0.002 secs) into: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/test-results/testDebugUnitTest
-Stored cache entry for task ':app:testDebugUnitTest' with cache key 2a105e2d3b3561e52a7b724a1d319bec
-Resolve mutations for :app:finalizeTestRoborazziDebug (Thread[#108,Execution worker,5,main]) started.
-:app:finalizeTestRoborazziDebug (Thread[#108,Execution worker,5,main]) started.
+Finished generating test html results (0.026 secs) into: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/reports/tests/testDebugUnitTest
+Finished generating test XML results (0.003 secs) into: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/test-results/testDebugUnitTest
+Stored cache entry for task ':app:testDebugUnitTest' with cache key a0fedb0868d1d31a91ae30849d84099f
+Resolve mutations for :app:finalizeTestRoborazziDebug (Thread[#84,Execution worker Thread 2,5,main]) started.
+:app:finalizeTestRoborazziDebug (Thread[#84,Execution worker Thread 2,5,main]) started.
 
 > Task :app:finalizeTestRoborazziDebug SKIPPED
 Roborazzi: roborazziTestFinalizer.onlyIf doesRoborazziRun false
 Skipping task ':app:finalizeTestRoborazziDebug' as task onlyIf 'Task satisfies onlyIf spec' is false.
-Build 8cb7145d-6995-4725-91fa-ebd603995b3a is started
-AAPT2 aapt2-9.1.1-14792394-linux Daemon #0: shutdown
-AAPT2 aapt2-9.1.1-14792394-linux Daemon #1: shutdown
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1791896930514.json
-Build 8cb7145d-6995-4725-91fa-ebd603995b3a is closed
+Build bc5e8d9c-3ab4-4b6f-82dc-41e24d479c78 is started
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1791899848206.json
+Build bc5e8d9c-3ab4-4b6f-82dc-41e24d479c78 is closed
 
-See the complete report at file:///home/runner/work/Mixtape-Pro/Mixtape-Pro/build/reports/configuration-cache/5txo9wlyj4cqkknqg5we2mg5s/eurg07c02wohmwls4gihayfer/configuration-cache-report.html
+See the complete report at file:///home/runner/work/Mixtape-Pro/Mixtape-Pro/build/reports/configuration-cache/9ef7djwhfoewxkdc5lov9ln22/eurg07c02wohmwls4gihayfer/configuration-cache-report.html
 
-BUILD SUCCESSFUL in 3m 4s
-33 actionable tasks: 33 executed
+BUILD SUCCESSFUL in 1m
+33 actionable tasks: 17 executed, 16 from cache
 Configuration cache entry stored.
