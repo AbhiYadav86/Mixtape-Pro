@@ -66,273 +66,157 @@ private val transitionHints: Map<MixRenderer.Transition, String> = mapOf(
 )
 
 /**
- * DJ Studio → MIXTAPE BUILDER.
- * Line up tracks, trim their in/out points, pick a DJ transition and an optional one-shot drop
- * between each pair, audition transitions, then render the whole mixtape to a real audio file.
+ * DJ Studio → MIXTAPE BUILDER + AUTO MIX.
+ * Auto Mix analyses songs (tempo, beats, intro/outro, loudness) and fills the builder;
+ * every transition can then be tweaked, previewed and rendered to one audio file.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MixtapeBuilderPanel(
+    viewModel: MainViewModel,
     librarySongs: List<Song>,
-    plan: List<MainViewModel.MixPlanItem>,
-    preview: MainViewModel.MixPreviewState,
-    exportState: MainViewModel.StudioExportState,
+    playlists: List<com.example.data.model.Playlist>,
     skin: RetroSkin,
-    onAdd: (Song) -> Unit,
-    onRemove: (String) -> Unit,
-    onMove: (String, Int) -> Unit,
-    onUpdate: (MainViewModel.MixPlanItem) -> Unit,
-    onClear: () -> Unit,
-    onPreview: (String) -> Unit,
-    onPreviewDone: () -> Unit,
-    onExport: (title: String, artist: String, format: StudioRenderEngine.OutputFormat) -> Unit,
-    onPlayExport: (Song) -> Unit,
-    onDismissExport: () -> Unit,
-    onBeforeAudition: () -> Unit
+    exportState: MainViewModel.StudioExportState,
+    onPlayExport: (Song) -> Unit
 ) {
-    val context = LocalContext.current
+    val plan by viewModel.mixPlan.collectAsState()
+    val preview by viewModel.mixPreview.collectAsState()
+    val task by viewModel.studioTask.collectAsState()
+
     var showPicker by remember { mutableStateOf(false) }
+    var showMultiPicker by remember { mutableStateOf(false) }
+    var showPlaylistPicker by remember { mutableStateOf(false) }
     var expandedKey by remember { mutableStateOf<String?>(null) }
     var title by remember { mutableStateOf("") }
     var artist by remember { mutableStateOf("") }
     var format by remember { mutableStateOf(StudioRenderEngine.OutputFormat.AAC) }
+    var style by remember { mutableStateOf(com.example.audio.AutoMixPlanner.Style.SMOOTH) }
+    var reorder by remember { mutableStateOf(true) }
 
-    // ---- Transition preview playback ----
-    var player by remember { mutableStateOf<MediaPlayer?>(null) }
-    var playingKey by remember { mutableStateOf<String?>(null) }
-    DisposableEffect(Unit) { onDispose { try { player?.release() } catch (_: Exception) {} } }
-    LaunchedEffect(preview.readyKey, preview.file) {
-        val file = preview.file
-        val key = preview.readyKey
-        if (file != null && key != null) {
-            try {
-                player?.release()
-                val mp = MediaPlayer()
-                mp.setDataSource(file)
-                mp.prepare()
-                mp.setOnCompletionListener { playingKey = null }
-                mp.start()
-                player = mp
-                playingKey = key
-            } catch (e: Exception) {
-                Toast.makeText(context, "Couldn't play the preview", Toast.LENGTH_SHORT).show()
-            }
-            onPreviewDone()
-        }
-    }
-    fun stopPreview() {
-        try { player?.pause() } catch (_: Exception) {}
-        playingKey = null
-    }
-
-    // Total running time (transitions overlap, brake/roll/cut don't)
     val totalMs = remember(plan) {
         var total = 0L
         plan.forEachIndexed { i, item ->
             total += (item.outMs - item.inMs).coerceAtLeast(0L)
-            if (i < plan.lastIndex && item.transition.usesLength) {
-                total -= (item.transitionSeconds * 1000).toLong()
-            }
+            if (i < plan.lastIndex && item.transition.usesLength) total -= (item.transitionSeconds * 1000).toLong()
         }
         total.coerceAtLeast(0L)
     }
 
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        StudioMonitor(viewModel, skin)
 
-        // ===== Header =====
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFF10141C))
-                .border(1.5.dp, skin.accentColor.copy(alpha = 0.6f), RoundedCornerShape(10.dp))
-                .padding(12.dp)
+        // ===== AUTO MIX =====
+        StudioCard(skin, title = "AUTO MIX", subtitle = "Pick songs and a style — tempo, beats, order and transitions are done for you", icon = Icons.Default.AutoAwesome) {
+            Text("Style", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            StudioChipGrid(
+                options = com.example.audio.AutoMixPlanner.Style.values().map { it to it.label },
+                selected = style,
+                skin = skin,
+                columns = 2
+            ) { style = it }
+            Text(style.description, color = StudioSubtle, fontSize = 12.sp)
+            StudioToggle("Best order", "Arrange songs by tempo for a smooth energy flow", reorder, skin) { reorder = it }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                StudioButton("Pick songs", Icons.Default.LibraryMusic, skin, Modifier.weight(1f), primary = false, enabled = task == null) { showMultiPicker = true }
+                StudioButton("A mixtape", Icons.Default.QueueMusic, skin, Modifier.weight(1f), primary = false, enabled = task == null) { showPlaylistPicker = true }
+            }
+            if (plan.size >= 2) {
+                StudioButton("Auto Mix these ${plan.size} tracks", Icons.Default.AutoAwesome, skin, Modifier.fillMaxWidth(), enabled = task == null) {
+                    viewModel.autoMix(plan.map { it.song }, style, reorder)
+                }
+            }
+        }
+
+        // ===== BUILDER =====
+        StudioCard(
+            skin,
+            title = "MIXTAPE BUILDER",
+            subtitle = if (plan.isEmpty()) "Or line up songs yourself and choose each transition" else "${plan.size} tracks • ${fmtClock(totalMs)}",
+            icon = Icons.Default.QueueMusic
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.QueueMusic, contentDescription = null, tint = skin.accentColor, modifier = Modifier.size(24.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("MIXTAPE BUILDER", color = Color.White, fontWeight = FontWeight.Black, fontSize = 16.sp, maxLines = 1)
-                    Text(
-                        if (plan.isEmpty()) "Line up songs, pick DJ transitions, render one mix"
-                        else "${plan.size} tracks • ${fmtClock(totalMs)}",
-                        color = Color(0xFFB4BFCE), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
-                    )
-                }
-                if (plan.isNotEmpty()) {
-                    IconButton(onClick = onClear) {
-                        Icon(Icons.Default.DeleteSweep, contentDescription = "Clear mix", tint = Color(0xFF94A3B8))
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(10.dp))
-            Button(
-                onClick = { showPicker = true },
-                colors = ButtonDefaults.buttonColors(containerColor = skin.accentColor),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth().heightIn(min = 46.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = Color.Black)
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("ADD TRACK", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                StudioButton("Add track", Icons.Default.Add, skin, Modifier.weight(1f)) { showPicker = true }
+                StudioButton("Clear", Icons.Default.DeleteSweep, skin, Modifier.weight(1f), primary = false, enabled = plan.isNotEmpty()) { viewModel.clearMix() }
             }
         }
 
-        if (plan.isEmpty()) {
-            Text(
-                "Tip: add 2 or more songs. Between each pair you can choose a DJ transition — crossfade, " +
-                    "bass swap, filter sweep, echo out, reverb wash, flanger, brake or loop roll — and drop " +
-                    "in a scratch, rewind or 808 hit.",
-                color = Color(0xFFB4BFCE),
-                fontSize = 13.sp,
-                modifier = Modifier.padding(horizontal = 4.dp)
-            )
-        }
-
-        // ===== Track list with transitions in between =====
         plan.forEachIndexed { index, item ->
             MixTrackCard(
                 index = index,
                 item = item,
+                bpm = viewModel.cachedAnalysis(item.song.uri)?.takeIf { it.hasBeat }?.bpm,
                 isFirst = index == 0,
                 isLast = index == plan.lastIndex,
                 expanded = expandedKey == item.key,
                 skin = skin,
                 onToggleExpand = { expandedKey = if (expandedKey == item.key) null else item.key },
-                onMove = { d -> onMove(item.key, d) },
-                onRemove = { onRemove(item.key) },
-                onUpdate = onUpdate
+                onMove = { d -> viewModel.moveInMix(item.key, d) },
+                onRemove = { viewModel.removeFromMix(item.key) },
+                onUpdate = { viewModel.updateMixItem(it) }
             )
             if (index < plan.lastIndex) {
                 TransitionCard(
                     item = item,
                     skin = skin,
                     isRendering = preview.renderingKey == item.key,
-                    isPlaying = playingKey == item.key,
-                    onUpdate = onUpdate,
-                    onPreview = {
-                        if (playingKey == item.key) stopPreview() else {
-                            onBeforeAudition()
-                            onPreview(item.key)
-                        }
-                    }
+                    onUpdate = { viewModel.updateMixItem(it) },
+                    onPreview = { viewModel.previewTransition(item.key) }
                 )
             }
         }
 
-        // ===== One-shot audition pads =====
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFF10141C))
-                .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(10.dp))
-                .padding(12.dp)
-        ) {
-            Text("ONE-SHOT DROPS", color = skin.accentColor, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-            Text("Tap to hear • add them to a transition above", color = Color(0xFFB4BFCE), fontSize = 12.sp)
-            Spacer(modifier = Modifier.height(8.dp))
+        // ===== ONE-SHOT PADS =====
+        StudioCard(skin, title = "ONE-SHOT DROPS", subtitle = "Tap to hear • add them to any transition above", icon = Icons.Default.GraphicEq) {
             val pads = listOf(
                 MixRenderer.OneShot.VINYL_SCRATCH to Color(0xFF00E5FF),
                 MixRenderer.OneShot.REWIND to Color(0xFFB388FF),
                 MixRenderer.OneShot.KICK_808 to Color(0xFFFF9100),
                 MixRenderer.OneShot.CLAP_808 to Color(0xFFFF4081)
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                pads.forEach { (shot, color) ->
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 56.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(color.copy(alpha = 0.18f))
-                            .border(1.5.dp, color, RoundedCornerShape(8.dp))
-                            .clickable {
-                                onBeforeAudition()
-                                OneShotSynth.play(shot)
-                            }
-                            .padding(4.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            shot.label,
-                            color = Color.White,
-                            fontWeight = FontWeight.Black,
-                            fontSize = 12.sp,
-                            textAlign = TextAlign.Center,
-                            maxLines = 2
-                        )
+            pads.chunked(2).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    row.forEach { (shot, color) ->
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 56.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(color.copy(alpha = 0.18f))
+                                .border(1.5.dp, color, RoundedCornerShape(10.dp))
+                                .clickable { viewModel.playOneShot(shot) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(shot.label, color = Color.White, fontWeight = FontWeight.Black, fontSize = 14.sp, textAlign = TextAlign.Center)
+                        }
                     }
                 }
             }
         }
 
-        // ===== Export =====
+        // ===== EXPORT =====
         if (plan.isNotEmpty()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color(0xFF10141C))
-                    .border(1.5.dp, skin.accentColor.copy(alpha = 0.6f), RoundedCornerShape(10.dp))
-                    .padding(12.dp)
-            ) {
-                Text("RENDER MIXTAPE", color = Color.White, fontWeight = FontWeight.Black, fontSize = 15.sp)
-                Spacer(modifier = Modifier.height(8.dp))
+            StudioCard(skin, title = "RENDER MIXTAPE", subtitle = "Saved to Music/Mixtape Pro and your Library", icon = Icons.Default.Album) {
                 OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    singleLine = true,
-                    label = { Text("Mixtape title") },
+                    value = title, onValueChange = { title = it }, singleLine = true, label = { Text("Mixtape title") },
                     colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = skin.accentColor),
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(6.dp))
                 OutlinedTextField(
-                    value = artist,
-                    onValueChange = { artist = it },
-                    singleLine = true,
-                    label = { Text("DJ name") },
+                    value = artist, onValueChange = { artist = it }, singleLine = true, label = { Text("DJ name") },
                     colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = skin.accentColor),
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                    listOf(
-                        StudioRenderEngine.OutputFormat.AAC to "M4A (small)",
-                        StudioRenderEngine.OutputFormat.WAV to "WAV (lossless)"
-                    ).forEach { (fmt, label) ->
-                        val sel = format == fmt
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(if (sel) skin.accentColor else Color(0xFF1E222D))
-                                .clickable { format = fmt }
-                                .padding(vertical = 10.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(label, color = if (sel) Color.Black else Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1)
-                        }
-                    }
+                StudioSegmented(
+                    options = listOf(StudioRenderEngine.OutputFormat.AAC to "M4A (small)", StudioRenderEngine.OutputFormat.WAV to "WAV (lossless)"),
+                    selected = format, skin = skin
+                ) { format = it }
+                StudioButton("Render & save (${fmtClock(totalMs)})", Icons.Default.Album, skin, Modifier.fillMaxWidth(), enabled = !exportState.isRunning) {
+                    viewModel.stopStudioAudio()
+                    RetroSoundEffects.playClick(RetroSoundEffects.SoundType.CD_SPIN)
+                    viewModel.exportMixtape(title, artist, format, "DJ Studio Mixtapes")
                 }
-                Spacer(modifier = Modifier.height(10.dp))
-                Button(
-                    onClick = {
-                        stopPreview()
-                        RetroSoundEffects.playClick(RetroSoundEffects.SoundType.CD_SPIN)
-                        onExport(title, artist, format)
-                    },
-                    enabled = !exportState.isRunning,
-                    colors = ButtonDefaults.buttonColors(containerColor = skin.accentColor),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                ) {
-                    Icon(Icons.Default.Album, contentDescription = null, tint = Color.Black)
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("RENDER & SAVE (${fmtClock(totalMs)})", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
-                }
-                StudioExportStatusCard(exportState, skin, onPlayExport, onDismissExport)
+                StudioExportStatusCard(exportState, skin, onPlayExport) { viewModel.clearStudioExportMessage() }
             }
         }
     }
@@ -341,10 +225,106 @@ fun MixtapeBuilderPanel(
         StudioTrackPickerDialog(
             songs = librarySongs.filter { it.durationMs > 5000 },
             skin = skin,
-            onPick = { song -> onAdd(song); showPicker = false },
+            onPick = { song -> viewModel.addToMix(song); showPicker = false },
             onDismiss = { showPicker = false }
         )
     }
+    if (showMultiPicker) {
+        MultiSongPickerDialog(
+            songs = librarySongs.filter { it.durationMs > 20_000 },
+            skin = skin,
+            confirmLabel = "Auto Mix",
+            onConfirm = { picked -> showMultiPicker = false; viewModel.autoMix(picked, style, reorder) },
+            onDismiss = { showMultiPicker = false }
+        )
+    }
+    if (showPlaylistPicker) {
+        AlertDialog(
+            onDismissRequest = { showPlaylistPicker = false },
+            containerColor = Color(0xFF16181E),
+            title = { Text("Auto Mix a mixtape", color = Color.White, fontWeight = FontWeight.Bold) },
+            text = {
+                androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.heightIn(max = 380.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(playlists.size) { i ->
+                        val pl = playlists[i]
+                        Text(
+                            "📼 ${pl.name}",
+                            color = Color.White,
+                            fontSize = 15.sp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFF222632))
+                                .clickable { showPlaylistPicker = false; viewModel.autoMixPlaylist(pl, style, reorder) }
+                                .padding(14.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showPlaylistPicker = false }) { Text("Close", color = Color.White) } }
+        )
+    }
+}
+
+/** Pick several songs at once (Auto Mix, Mashup). */
+@Composable
+fun MultiSongPickerDialog(
+    songs: List<Song>,
+    skin: RetroSkin,
+    confirmLabel: String,
+    max: Int = 30,
+    onConfirm: (List<Song>) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var query by remember { mutableStateOf("") }
+    val picked = remember { mutableStateListOf<String>() }
+    val filtered = remember(songs, query) {
+        if (query.isBlank()) songs else songs.filter { it.title.contains(query, true) || it.artist.contains(query, true) }
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF16181E),
+        title = { Text("Pick songs (${picked.size})", color = Color.White, fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = query, onValueChange = { query = it }, singleLine = true,
+                    placeholder = { Text("Search…", color = Color(0xFF94A3B8)) },
+                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White, focusedBorderColor = skin.accentColor),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
+                    items(filtered.size) { i ->
+                        val song = filtered[i]
+                        val on = song.id in picked
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(6.dp))
+                                .clickable { if (on) picked.removeAll { it == song.id } else if (picked.size < max) picked.add(song.id) }
+                                .padding(vertical = 4.dp)
+                        ) {
+                            Checkbox(checked = on, onCheckedChange = null, colors = CheckboxDefaults.colors(checkedColor = skin.accentColor))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(song.title, color = Color.White, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(song.artist, color = Color(0xFF94A3B8), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = picked.size >= 2, onClick = { onConfirm(songs.filter { it.id in picked }) }) {
+                Text(confirmLabel, color = if (picked.size >= 2) skin.accentColor else Color(0xFF64748B), fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = Color.White) } }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -352,6 +332,7 @@ fun MixtapeBuilderPanel(
 private fun MixTrackCard(
     index: Int,
     item: MainViewModel.MixPlanItem,
+    bpm: Double?,
     isFirst: Boolean,
     isLast: Boolean,
     expanded: Boolean,
@@ -383,7 +364,7 @@ private fun MixTrackCard(
             Column(modifier = Modifier.weight(1f).clickable(onClick = onToggleExpand)) {
                 Text(item.song.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    "${item.song.artist} • ${fmtClock(item.inMs)}–${fmtClock(item.outMs)}",
+                    listOfNotNull(item.song.artist, bpm?.let { "${it.toInt()} BPM" }, "${fmtClock(item.inMs)}–${fmtClock(item.outMs)}").joinToString(" • "),
                     color = Color(0xFFB4BFCE), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
             }
@@ -436,91 +417,43 @@ private fun TransitionCard(
     item: MainViewModel.MixPlanItem,
     skin: RetroSkin,
     isRendering: Boolean,
-    isPlaying: Boolean,
     onUpdate: (MainViewModel.MixPlanItem) -> Unit,
     onPreview: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 14.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(Color(0xFF0B0E14))
-            .border(1.dp, skin.secondaryAccentColor.copy(alpha = 0.55f), RoundedCornerShape(10.dp))
-            .padding(10.dp)
-    ) {
+    StudioCard(skin, modifier = Modifier.padding(horizontal = 12.dp), accent = skin.secondaryAccentColor) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.SouthEast, contentDescription = null, tint = skin.secondaryAccentColor, modifier = Modifier.size(16.dp))
+            Icon(transitionIcons[item.transition] ?: Icons.Default.SwapHoriz, contentDescription = null, tint = skin.secondaryAccentColor, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(6.dp))
-            Text("TRANSITION", color = skin.secondaryAccentColor, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.weight(1f))
-            OutlinedButton(
-                onClick = onPreview,
-                enabled = !isRendering,
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                modifier = Modifier.heightIn(min = 34.dp)
-            ) {
-                if (isRendering) {
-                    CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = Color.White)
-                    Text(" Preparing…", color = Color.White, fontSize = 12.sp)
-                } else {
-                    Icon(if (isPlaying) Icons.Default.Stop else Icons.Default.Headphones, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                    Text(if (isPlaying) " Stop" else " Preview", color = Color.White, fontSize = 12.sp)
-                }
+            Column(modifier = Modifier.weight(1f)) {
+                Text("TRANSITION • ${item.transition.label}", color = skin.secondaryAccentColor, fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1)
+                Text(transitionHints[item.transition] ?: "", color = StudioSubtle, fontSize = 12.sp, maxLines = 2)
             }
         }
-        Spacer(modifier = Modifier.height(6.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            MixRenderer.Transition.values().forEach { t ->
-                val sel = item.transition == t
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(if (sel) skin.secondaryAccentColor else Color(0xFF1E222D))
-                        .border(1.dp, if (sel) skin.secondaryAccentColor else Color(0x40FFFFFF), RoundedCornerShape(16.dp))
-                        .clickable {
-                            RetroSoundEffects.playClick(RetroSoundEffects.SoundType.SLIDER_TICK)
-                            onUpdate(item.copy(transition = t, transitionSeconds = if (t.usesLength) item.transitionSeconds.takeIf { item.transition.usesLength } ?: t.defaultSeconds.toFloat() else t.defaultSeconds.toFloat()))
-                        }
-                        .padding(horizontal = 10.dp, vertical = 7.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(transitionIcons[t] ?: Icons.Default.SwapHoriz, contentDescription = null, tint = if (sel) Color.Black else Color.White, modifier = Modifier.size(15.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(t.label, color = if (sel) Color.Black else Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp, maxLines = 1)
-                }
-            }
+        StudioChipGrid(
+            options = MixRenderer.Transition.values().map { it to it.label },
+            selected = item.transition,
+            skin = skin,
+            columns = 3,
+            accent = skin.secondaryAccentColor
+        ) { t ->
+            RetroSoundEffects.playClick(RetroSoundEffects.SoundType.SLIDER_TICK)
+            onUpdate(item.copy(transition = t, transitionSeconds = if (t.usesLength && item.transition.usesLength) item.transitionSeconds else t.defaultSeconds.toFloat()))
         }
-        Text(transitionHints[item.transition] ?: "", color = Color(0xFFB4BFCE), fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
         if (item.transition.usesLength) {
-            Text("Length ${item.transitionSeconds.toInt()} s", color = Color.White, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
-            Slider(
-                value = item.transitionSeconds,
-                onValueChange = { onUpdate(item.copy(transitionSeconds = it.coerceIn(2f, 16f))) },
-                valueRange = 2f..16f,
-                steps = 13,
-                colors = SliderDefaults.colors(thumbColor = skin.secondaryAccentColor, activeTrackColor = skin.secondaryAccentColor)
-            )
-        }
-        Text("Drop", color = Color.White, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp, bottom = 4.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            MixRenderer.OneShot.values().forEach { shot ->
-                val sel = item.drop == shot
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(if (sel) skin.accentColor else Color(0xFF1E222D))
-                        .clickable { onUpdate(item.copy(drop = shot)) }
-                        .padding(horizontal = 12.dp, vertical = 7.dp)
-                ) {
-                    Text(shot.label, color = if (sel) Color.Black else Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp, maxLines = 1)
-                }
+            StudioSlider("Length", "${item.transitionSeconds.toInt()} s", item.transitionSeconds, 2f..16f, skin, steps = 13) {
+                onUpdate(item.copy(transitionSeconds = it.coerceIn(2f, 16f)))
             }
         }
+        Text("Drop at the change", color = Color.White, fontSize = 13.sp)
+        StudioChipGrid(
+            options = MixRenderer.OneShot.values().map { it to it.label },
+            selected = item.drop,
+            skin = skin,
+            columns = 3
+        ) { onUpdate(item.copy(drop = it)) }
+        StudioButton(
+            if (isRendering) "Preparing preview…" else "Preview transition",
+            Icons.Default.Headphones, skin, Modifier.fillMaxWidth(), primary = false, enabled = !isRendering, onClick = onPreview
+        )
     }
 }

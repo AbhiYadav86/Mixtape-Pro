@@ -746,7 +746,9 @@ fun PlayerScreen(
                                 onMixPreviewDone = { viewModel.clearMixPreview() },
                                 onMixExport = { title, artist, format ->
                                     viewModel.exportMixtape(title, artist, format, "DJ Studio Mixtapes")
-                                }
+                                },
+                                studioVm = viewModel,
+                                studioPlaylists = allPlaylists
                             )
                         }
                         5 -> {

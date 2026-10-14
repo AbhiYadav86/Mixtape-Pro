@@ -110,7 +110,7 @@ private fun PanelCard(skin: RetroSkin, title: String, subtitle: String, icon: an
 }
 
 @Composable
-private fun SelectedTrackRow(song: Song?, skin: RetroSkin, onPick: () -> Unit) {
+internal fun SelectedTrackRow(song: Song?, skin: RetroSkin, onPick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -284,7 +284,8 @@ fun RingtoneMakerPanel(
     onBeforePreview: () -> Unit,
     onExport: (song: Song, startMs: Long, endMs: Long, fadeInMs: Long, fadeOutMs: Long, title: String) -> Unit,
     onPlayExport: (Song) -> Unit,
-    onDismissExport: () -> Unit
+    onDismissExport: () -> Unit,
+    viewModel: MainViewModel? = null
 ) {
     var song by remember { mutableStateOf(initialSong ?: songs.firstOrNull()) }
     var showPicker by remember { mutableStateOf(false) }
@@ -319,6 +320,10 @@ fun RingtoneMakerPanel(
         }
     }
 
+    if (viewModel != null) {
+        StudioMonitor(viewModel, skin)
+        Spacer(modifier = Modifier.height(10.dp))
+    }
     PanelCard(skin, "RINGTONE MAKER", "Cut any song into a ringtone or alert sound", Icons.Default.RingVolume) {
         SelectedTrackRow(song, skin) { showPicker = true }
         Spacer(modifier = Modifier.height(12.dp))
@@ -369,6 +374,10 @@ fun RingtoneMakerPanel(
                 OutlinedButton(
                     onClick = {
                         val s = song ?: return@OutlinedButton
+                        if (viewModel != null) {
+                            viewModel.previewRingtone(s, startMs, endMs, if (fadeIn) 600L else 0L, if (fadeOut) 1500L else 0L)
+                            return@OutlinedButton
+                        }
                         if (previewing) {
                             try { previewPlayer?.pause() } catch (_: Exception) {}
                             previewing = false
