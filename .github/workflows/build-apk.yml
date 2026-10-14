@@ -36,6 +36,12 @@ jobs:
           set -o pipefail
           gradle :app:assembleDebug --no-daemon --console=plain 2>&1 | tee build.log
 
+      - name: Audio DSP unit tests
+        id: dsptest
+        run: |
+          set -o pipefail
+          gradle :app:testDebugUnitTest --tests "com.example.StudioDspTest" --no-daemon --console=plain 2>&1 | tee -a build.log
+
       - name: Report compile errors
         if: failure()
         run: |
