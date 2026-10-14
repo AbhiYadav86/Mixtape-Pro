@@ -73,17 +73,26 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-      - name: Publish APK to the "latest" release
+      - name: Publish APK releases (permanent version + "latest")
         if: success() && github.ref_name == 'main'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk MixtapePro.apk
+          VERSION="3.0.${GITHUB_RUN_NUMBER}"
+          cp app/build/outputs/apk/debug/app-debug.apk "MixtapePro-v${VERSION}.apk"
+          NOTES=$(git log -1 --pretty=format:'%s%n%n%b' | grep -v -E '^(Co-Authored-By|Claude-Session):')
+          # 1) A permanent, numbered release for this exact build (never overwritten)
+          gh release create "v${VERSION}" "MixtapePro-v${VERSION}.apk" \
+            --target "${GITHUB_SHA}" \
+            --title "Mixtape Pro v${VERSION}" \
+            --notes "${NOTES}" || true
+          # 2) The moving "latest" download link
+          cp "MixtapePro-v${VERSION}.apk" MixtapePro.apk
           gh release delete mixtape-pro-latest --yes --cleanup-tag || true
           gh release create mixtape-pro-latest MixtapePro.apk \
             --target "${GITHUB_SHA}" --prerelease \
-            --title "Mixtape Pro (latest build)" \
-            --notes "Automatic build of ${GITHUB_SHA::7} from the main branch. Download MixtapePro.apk on your phone and install it."
+            --title "Mixtape Pro (latest build) — v${VERSION}" \
+            --notes "Always the newest build from main. Older versions are listed on the Releases page as v3.0.x."
 
   api-check:
     runs-on: ubuntu-latest

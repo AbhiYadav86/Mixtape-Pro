@@ -17,8 +17,10 @@ android {
     applicationId = "com.mixtapepro.player"
     minSdk = 24
     targetSdk = 36
-    versionCode = 2
-    versionName = "2.0-repair"
+    // Every GitHub build gets a higher version number so phones accept it as an update
+    val buildNumber = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0
+    versionCode = 100 + buildNumber
+    versionName = "3.0.$buildNumber"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
