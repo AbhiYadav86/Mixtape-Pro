@@ -50,7 +50,16 @@ fun CleanUpStudioPanel(
     var showPicker by remember { mutableStateOf(false) }
     var settings by remember { mutableStateOf(MainViewModel.CleanSettings()) }
     val task by viewModel.studioTask.collectAsState()
+    val monitor by com.example.audio.StudioPreviewPlayer.state.collectAsState()
     val dur = (song?.durationMs ?: 0L).coerceAtLeast(1000L)
+    // which version the monitor is playing, if it holds this song's Clean-Up stems
+    val liveStem = song?.let { if (monitor.loaded && viewModel.isCleanPreviewLoaded(it, settings)) monitor.activeStem else null }
+
+    // Moving a strength slider while listening re-renders from the same moment (no Preview tap)
+    LaunchedEffect(settings.noiseStrength, settings.vocalStrength) {
+        kotlinx.coroutines.delay(450)
+        song?.let { if (settings.tool != MainViewModel.CleanTool.CUT) viewModel.refreshCleanUpPreview(it, settings) }
+    }
 
     // default cut selection: 10 s in the middle
     LaunchedEffect(song?.id) {
@@ -78,17 +87,28 @@ fun CleanUpStudioPanel(
         if (s != null) {
             when (settings.tool) {
                 MainViewModel.CleanTool.NOISE -> StudioCard(skin, title = "Noise Remover", subtitle = "Learns the background noise from the quietest moments, then removes it everywhere", icon = Icons.Default.Hearing) {
+                    Text("Listen", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    StudioSegmented(
+                        options = listOf(0 to "Original", 1 to "Cleaned"),
+                        selected = liveStem ?: -1,
+                        skin = skin
+                    ) { i -> viewModel.listenCleanUp(s, settings, i) }
                     StudioSlider("Strength", "${(settings.noiseStrength * 100).toInt()}%", settings.noiseStrength, 0f..1f, skin) {
                         settings = settings.copy(noiseStrength = it)
                     }
                     Text("Tip: start around 50–60 %. Very high settings can sound watery.", color = StudioSubtle, fontSize = 12.sp)
                 }
                 MainViewModel.CleanTool.VOCALS -> StudioCard(skin, title = "Vocal Remover", subtitle = "Separates sound mixed in the centre (usually the lead vocal) per frequency", icon = Icons.Default.MicOff) {
+                    Text("Tap to listen — switches instantly at the same moment", color = StudioSubtle, fontSize = 12.sp)
                     StudioSegmented(
-                        options = listOf(StudioDsp.VocalMode.INSTRUMENTAL to "Instrumental", StudioDsp.VocalMode.VOCALS_ONLY to "Vocals only"),
-                        selected = settings.vocalMode,
+                        options = listOf(0 to "Original", 1 to "Instrumental", 2 to "Vocals"),
+                        selected = liveStem ?: viewModel.vocalStemIndex(settings.vocalMode),
                         skin = skin
-                    ) { settings = settings.copy(vocalMode = it) }
+                    ) { i ->
+                        if (i == 1) settings = settings.copy(vocalMode = StudioDsp.VocalMode.INSTRUMENTAL)
+                        if (i == 2) settings = settings.copy(vocalMode = StudioDsp.VocalMode.VOCALS_ONLY)
+                        viewModel.listenCleanUp(s, settings, i)
+                    }
                     StudioSlider("Strength", "${(settings.vocalStrength * 100).toInt()}%", settings.vocalStrength, 0.3f..1f, skin) {
                         settings = settings.copy(vocalStrength = it)
                     }
@@ -113,13 +133,21 @@ fun CleanUpStudioPanel(
             }
 
             StudioCard(skin, title = "Listen & save", subtitle = "Switch between Original and Result — playback stays at the same moment", icon = Icons.Default.Headphones) {
+                val isCut = settings.tool == MainViewModel.CleanTool.CUT
                 StudioButtonPair(
                     skin,
-                    left = Triple("Original", Icons.Default.PlayArrow) { viewModel.previewOriginal(s, if (settings.tool == MainViewModel.CleanTool.CUT) (settings.cutStartMs - 6000).coerceAtLeast(0) else -1L) },
+                    left = Triple("Original", Icons.Default.PlayArrow) {
+                        if (isCut) viewModel.previewOriginal(s, (settings.cutStartMs - 6000).coerceAtLeast(0)) else viewModel.listenCleanUp(s, settings, 0)
+                    },
                     right = Triple("Preview result", Icons.Default.Headphones) { viewModel.previewCleanUp(s, settings) },
                     enabled = task == null
                 )
-                StudioButton("Save cleaned track", Icons.Default.Save, skin, Modifier.fillMaxWidth(), enabled = !exportState.isRunning && task == null) {
+                val saveLabel = when (settings.tool) {
+                    MainViewModel.CleanTool.NOISE -> "Save cleaned track"
+                    MainViewModel.CleanTool.VOCALS -> if (settings.vocalMode == StudioDsp.VocalMode.INSTRUMENTAL) "Save instrumental" else "Save vocals only"
+                    MainViewModel.CleanTool.CUT -> "Save edited track"
+                }
+                StudioButton(saveLabel, Icons.Default.Save, skin, Modifier.fillMaxWidth(), enabled = !exportState.isRunning && task == null) {
                     viewModel.stopStudioAudio()
                     viewModel.exportCleanUp(s, settings)
                 }

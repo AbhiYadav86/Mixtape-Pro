@@ -363,6 +363,112 @@ object StudioDsp {
         override fun release() = up.release()
     }
 
+    /**
+     * One STFT analysis feeding several outputs ("stems"): each output gets its own copy of the
+     * spectrum, its own processor (null = untouched) and its own overlap-add. All outputs stay
+     * sample-aligned, so a player can switch between them instantly.
+     */
+    class MultiStft(
+        private val up: MixRenderer.PcmSource,
+        private val processors: List<SpectralFrame?>,
+        private val n: Int = 2048
+    ) {
+        val count = processors.size
+        private val hop = n / 4
+        private val win = hann(n)
+        private val norm = 1.0 / 1.5
+        private val inL = DoubleArray(n); private val inR = DoubleArray(n)
+        private val bRe = DoubleArray(n); private val bIm = DoubleArray(n)
+        private val cRe = DoubleArray(n); private val cIm = DoubleArray(n)
+        private val lRe = DoubleArray(n); private val lIm = DoubleArray(n)
+        private val rRe = DoubleArray(n); private val rIm = DoubleArray(n)
+        private val accL = Array(count) { DoubleArray(n) }
+        private val accR = Array(count) { DoubleArray(n) }
+        private val hopBuf = FloatArray(hop * 2)
+        private val outQ = Array(count) { FloatArray(hop * 2) }
+        private var outCount = 0
+        private var outPos = 0
+        private var latencyToDrop = n - hop
+        private var inputFrames = 0L
+        private var emitted = 0L
+        private var upEnded = false
+        private var flushHops = 0
+
+        private fun step(): Boolean {
+            var got = 0
+            if (!upEnded) {
+                got = readFully(up, hopBuf, 0, hop)
+                if (got < hop) upEnded = true
+                inputFrames += got
+            }
+            if (upEnded) {
+                if (got == 0) {
+                    if (flushHops >= n / hop) return false
+                    flushHops++
+                }
+                java.util.Arrays.fill(hopBuf, got * 2, hop * 2, 0f)
+            }
+            System.arraycopy(inL, hop, inL, 0, n - hop); System.arraycopy(inR, hop, inR, 0, n - hop)
+            for (k in 0 until hop) { inL[n - hop + k] = hopBuf[k * 2].toDouble(); inR[n - hop + k] = hopBuf[k * 2 + 1].toDouble() }
+            for (k in 0 until n) {
+                bRe[k] = inL[k] * win[k]; bIm[k] = 0.0
+                cRe[k] = inR[k] * win[k]; cIm[k] = 0.0
+            }
+            fft(bRe, bIm); fft(cRe, cIm)
+            for (o in 0 until count) {
+                System.arraycopy(bRe, 0, lRe, 0, n); System.arraycopy(bIm, 0, lIm, 0, n)
+                System.arraycopy(cRe, 0, rRe, 0, n); System.arraycopy(cIm, 0, rIm, 0, n)
+                processors[o]?.process(lRe, lIm, rRe, rIm)
+                for (k in 1 until n / 2) {
+                    lRe[n - k] = lRe[k]; lIm[n - k] = -lIm[k]
+                    rRe[n - k] = rRe[k]; rIm[n - k] = -rIm[k]
+                }
+                lIm[0] = 0.0; rIm[0] = 0.0; lIm[n / 2] = 0.0; rIm[n / 2] = 0.0
+                fft(lRe, lIm, inverse = true); fft(rRe, rIm, inverse = true)
+                val aL = accL[o]; val aR = accR[o]
+                for (k in 0 until n) {
+                    aL[k] += lRe[k] / n * win[k] * norm
+                    aR[k] += rRe[k] / n * win[k] * norm
+                }
+            }
+            outCount = 0; outPos = 0
+            for (k in 0 until hop) {
+                if (latencyToDrop > 0) { latencyToDrop--; continue }
+                if (emitted >= inputFrames && upEnded) break
+                for (o in 0 until count) {
+                    outQ[o][outCount * 2] = accL[o][k].toFloat()
+                    outQ[o][outCount * 2 + 1] = accR[o][k].toFloat()
+                }
+                outCount++
+                emitted++
+            }
+            for (o in 0 until count) {
+                System.arraycopy(accL[o], hop, accL[o], 0, n - hop); java.util.Arrays.fill(accL[o], n - hop, n, 0.0)
+                System.arraycopy(accR[o], hop, accR[o], 0, n - hop); java.util.Arrays.fill(accR[o], n - hop, n, 0.0)
+            }
+            return true
+        }
+
+        /** Fill each of [outs] (interleaved stereo) with the same span of frames. Returns frames. */
+        fun read(outs: Array<FloatArray>, maxFrames: Int): Int {
+            var produced = 0
+            while (produced < maxFrames) {
+                if (outPos >= outCount) {
+                    if (upEnded && emitted >= inputFrames) break
+                    if (!step()) break
+                    continue
+                }
+                val m = min(maxFrames - produced, outCount - outPos)
+                for (o in 0 until count) System.arraycopy(outQ[o], outPos * 2, outs[o], produced * 2, m * 2)
+                outPos += m
+                produced += m
+            }
+            return produced
+        }
+
+        fun release() = up.release()
+    }
+
     // =============================================================================================
     // Noise remover (spectral subtraction with a learned noise profile)
     // =============================================================================================

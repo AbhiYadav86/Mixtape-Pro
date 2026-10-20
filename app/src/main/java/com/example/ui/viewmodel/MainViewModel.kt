@@ -907,8 +907,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 durationMs = total.coerceAtLeast(1000L),
                 markers = listOf(marker),
                 seekable = false
-            ) { _, sink ->
-                com.example.audio.MixRenderer.render(tracks, com.example.audio.MixRenderer.decoderFactory(context), { d, n -> sink.write(d, n) }, 1L) {}
+            ) { _, sinks ->
+                com.example.audio.MixRenderer.render(tracks, com.example.audio.MixRenderer.decoderFactory(context), { d, n -> sinks[0].write(d, n) }, 1L) {}
             }
         )
     }
@@ -935,8 +935,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
         val tracks = list.map { it.toMixTrack() }
         startPreview(
-            PreviewSpec(label = "Mixtape preview • ${list.size} tracks", durationMs = t.coerceAtLeast(1000L), markers = markers, seekable = false) { _, sink ->
-                com.example.audio.MixRenderer.render(tracks, com.example.audio.MixRenderer.decoderFactory(context), { d, n -> sink.write(d, n) }, 1L) {}
+            PreviewSpec(label = "Mixtape preview • ${list.size} tracks", durationMs = t.coerceAtLeast(1000L), markers = markers, seekable = false) { _, sinks ->
+                com.example.audio.MixRenderer.render(tracks, com.example.audio.MixRenderer.decoderFactory(context), { d, n -> sinks[0].write(d, n) }, 1L) {}
             }
         )
     }
@@ -987,36 +987,44 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val markers: List<Long> = emptyList(),
         /** true = seeking anywhere re-renders from there; false = seek inside what's rendered. */
         val seekable: Boolean,
-        val render: (fromMs: Long, sink: com.example.audio.StudioPreviewBuffer) -> Unit
+        /** Names of aligned versions rendered together (empty = one version). */
+        val stems: List<String> = emptyList(),
+        val render: (fromMs: Long, sinks: List<com.example.audio.StudioPreviewBuffer>) -> Unit
     )
 
     private var previewJob: Job? = null
 
-    private fun startPreview(spec: PreviewSpec, fromMs: Long = 0L, autoPlay: Boolean = true) {
+    private fun startPreview(spec: PreviewSpec, fromMs: Long = 0L, autoPlay: Boolean = true, stem: Int = -1) {
         previewJob?.cancel()
         val context = getApplication<Application>()
         val from = fromMs.coerceIn(0L, (spec.durationMs - 1000L).coerceAtLeast(0L))
-        val buffer = com.example.audio.StudioPreviewBuffer.create(context.cacheDir, (spec.durationMs - from).coerceAtLeast(1000L) * 44100 / 1000)
+        val expected = (spec.durationMs - from).coerceAtLeast(1000L) * 44100 / 1000
+        val buffers = List(spec.stems.size.coerceAtLeast(1)) { com.example.audio.StudioPreviewBuffer.create(context.cacheDir, expected) }
         val section = studioSection
         val restart: ((Long) -> Unit)? =
-            if (spec.seekable) { { t: Long -> startPreview(spec, t, com.example.audio.StudioPreviewPlayer.isActive) } } else null
-        com.example.audio.StudioPreviewPlayer.load(
-            buffer, spec.label, section, from, spec.durationMs, spec.markers, spec.sourceKey, spec.timeScale, autoPlay,
+            if (spec.seekable) {
+                { t: Long ->
+                    startPreview(spec, t, com.example.audio.StudioPreviewPlayer.isActive, com.example.audio.StudioPreviewPlayer.state.value.activeStem)
+                }
+            } else null
+        val activeStem = if (stem >= 0) stem else spec.stems.lastIndex.coerceAtLeast(0).coerceAtMost(1)
+        com.example.audio.StudioPreviewPlayer.loadStems(
+            buffers, spec.stems, activeStem, spec.label, section, from, spec.durationMs, spec.markers, spec.sourceKey, spec.timeScale, autoPlay,
             restartAt = restart
         )
         previewJob = viewModelScope.launch(Dispatchers.IO) {
             try {
-                spec.render(from, buffer)
+                spec.render(from, buffers)
             } catch (e: com.example.audio.StudioPreviewBuffer.Cancelled) {
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                if (!buffer.cancelled) {
-                    if (buffer.framesWritten == 0L) com.example.audio.StudioPreviewPlayer.stop()
+                if (buffers.none { it.cancelled }) {
+                    if (buffers[0].framesWritten == 0L) com.example.audio.StudioPreviewPlayer.stop()
                     _statusMessage.value = "Preview failed: ${e.message ?: "couldn't read the audio"}"
                 }
             } finally {
-                buffer.finish()
+                buffers.forEach { it.finish() }
             }
         }
     }
@@ -1073,9 +1081,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val dur = if (durationMs > 0) durationMs else com.example.audio.StudioRenderEngine.durationMs(context, uri)
         val from = if (startMs >= 0) startMs else continuePosition(uri, 1.0)
         startPreview(
-            PreviewSpec(label = label, durationMs = dur.coerceAtLeast(1000L), sourceKey = uri, seekable = true) { f, sink ->
+            PreviewSpec(label = label, durationMs = dur.coerceAtLeast(1000L), sourceKey = uri, seekable = true) { f, sinks ->
                 com.example.audio.StudioJobs.streamInto(
-                    com.example.audio.MixRenderer.decoderFactory(context)(com.example.audio.MixRenderer.MixTrack(uri, f, -1L)), sink
+                    com.example.audio.MixRenderer.decoderFactory(context)(com.example.audio.MixRenderer.MixTrack(uri, f, -1L)), sinks[0]
                 )
             },
             from
@@ -1193,48 +1201,100 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 // the whole song with the section removed; starts 6 s before the join
                 val cutLen = (s.cutEndMs - s.cutStartMs).coerceAtLeast(0L)
                 startPreview(
-                    PreviewSpec(label = "Cut preview: ${song.title}", durationMs = (dur - cutLen).coerceAtLeast(1000L), markers = listOf(s.cutStartMs), seekable = true) { f, sink ->
+                    PreviewSpec(label = "Cut preview: ${song.title}", durationMs = (dur - cutLen).coerceAtLeast(1000L), markers = listOf(s.cutStartMs), seekable = true) { f, sinks ->
                         fun part(a: Long, b: Long) = com.example.audio.MixRenderer.MixTrack(
                             song.uri, a, b, transition = com.example.audio.MixRenderer.Transition.CROSSFADE, transitionSeconds = 0.05f
                         )
                         val parts = if (f < s.cutStartMs) listOf(part(f, s.cutStartMs), part(s.cutEndMs, -1L)) else listOf(part(s.cutEndMs + (f - s.cutStartMs), -1L))
-                        com.example.audio.MixRenderer.render(parts, com.example.audio.MixRenderer.decoderFactory(context), { d, n -> sink.write(d, n) }, 1L) {}
+                        com.example.audio.MixRenderer.render(parts, com.example.audio.MixRenderer.decoderFactory(context), { d, n -> sinks[0].write(d, n) }, 1L) {}
                     },
                     (s.cutStartMs - 6000).coerceAtLeast(0L)
                 )
             }
-            CleanTool.VOCALS -> {
-                val label = "${if (s.vocalMode == com.example.audio.StudioDsp.VocalMode.INSTRUMENTAL) "Instrumental" else "Vocals only"}: ${song.title}"
-                startPreview(
-                    PreviewSpec(label = label, durationMs = dur, sourceKey = song.uri, seekable = true) { f, sink ->
-                        com.example.audio.StudioJobs.streamInto(cleanSource(song, s, null, f, -1L), sink)
-                    },
-                    continuePosition(song.uri, 1.0)
-                )
-            }
-            CleanTool.NOISE -> {
-                val from = continuePosition(song.uri, 1.0)
-                val spec = { profile: com.example.audio.StudioDsp.NoiseProfile ->
-                    PreviewSpec(label = "Noise removed: ${song.title}", durationMs = dur, sourceKey = song.uri, seekable = true) { f, sink ->
-                        com.example.audio.StudioJobs.streamInto(cleanSource(song, s, profile, f, -1L), sink)
-                    }
-                }
-                val cached = noiseProfiles[song.uri]
-                if (cached != null) {
-                    startPreview(spec(cached), from)
-                } else {
-                    previewJob?.cancel()
-                    studioTaskJob?.cancel()
-                    com.example.audio.StudioPreviewPlayer.stop()
-                    studioTaskJob = viewModelScope.launch {
-                        _studioTask.value = StudioTask("Learning the noise in \"${song.title}\"…", null)
-                        val profile = try { noiseProfileFor(song) {} } catch (e: kotlinx.coroutines.CancellationException) { _studioTask.value = null; throw e } catch (e: Exception) { null }
-                        _studioTask.value = null
-                        if (profile != null) startPreview(spec(profile), from) else _statusMessage.value = "Couldn't read this song's audio"
-                    }
-                }
+            CleanTool.VOCALS, CleanTool.NOISE -> listenCleanUp(song, s, if (s.tool == CleanTool.VOCALS) vocalStemIndex(s.vocalMode) else 1)
+        }
+    }
+
+    // Stems of the Clean-Up preview: 0 = Original, then the processed version(s)
+    fun vocalStemIndex(mode: com.example.audio.StudioDsp.VocalMode) = if (mode == com.example.audio.StudioDsp.VocalMode.INSTRUMENTAL) 1 else 2
+
+    /** What the loaded Clean-Up preview was rendered with (song + tool + strength). */
+    private var cleanPreviewKey: String? = null
+
+    private fun cleanKey(song: Song, s: CleanSettings) = when (s.tool) {
+        CleanTool.VOCALS -> "${song.uri}|V|${s.vocalStrength}"
+        CleanTool.NOISE -> "${song.uri}|N|${s.noiseStrength}"
+        CleanTool.CUT -> "${song.uri}|C"
+    }
+
+    /** True if the monitor holds the Clean-Up stems for exactly these settings. */
+    fun isCleanPreviewLoaded(song: Song, s: CleanSettings): Boolean {
+        val st = com.example.audio.StudioPreviewPlayer.state.value
+        return st.loaded && st.section == SECTION_CLEAN && st.stems.isNotEmpty() && cleanPreviewKey == cleanKey(song, s)
+    }
+
+    /**
+     * Listen to one version — 0 Original, 1 Instrumental / Cleaned, 2 Vocals only. If those
+     * stems are already playing it switches instantly at the same moment; otherwise it renders
+     * all versions together (from the current position) so later switches are instant.
+     */
+    fun listenCleanUp(song: Song, s: CleanSettings, stem: Int, autoPlay: Boolean = true) {
+        if (isCleanPreviewLoaded(song, s)) {
+            com.example.audio.StudioPreviewPlayer.setStem(stem)
+            if (autoPlay && !com.example.audio.StudioPreviewPlayer.isActive) com.example.audio.StudioPreviewPlayer.resume()
+            return
+        }
+        val context = getApplication<Application>()
+        val dur = song.durationMs.coerceAtLeast(1000L)
+        val from = continuePosition(song.uri, 1.0)
+        val key = cleanKey(song, s)
+        if (s.tool == CleanTool.VOCALS) {
+            cleanPreviewKey = key
+            startPreview(
+                PreviewSpec(
+                    label = song.title, durationMs = dur, sourceKey = song.uri, seekable = true,
+                    stems = listOf("Original", "Instrumental", "Vocals only")
+                ) { f, sinks ->
+                    com.example.audio.StudioJobs.streamStemsInto(com.example.audio.StudioJobs.vocalStems(context, song.uri, s.vocalStrength, f), sinks)
+                },
+                from, autoPlay, stem
+            )
+            return
+        }
+        val spec = { profile: com.example.audio.StudioDsp.NoiseProfile ->
+            PreviewSpec(
+                label = song.title, durationMs = dur, sourceKey = song.uri, seekable = true,
+                stems = listOf("Original", "Cleaned")
+            ) { f, sinks ->
+                com.example.audio.StudioJobs.streamStemsInto(com.example.audio.StudioJobs.noiseStems(context, song.uri, profile, s.noiseStrength, f), sinks)
             }
         }
+        val cached = noiseProfiles[song.uri]
+        if (cached != null) {
+            cleanPreviewKey = key
+            startPreview(spec(cached), from, autoPlay, stem.coerceAtMost(1))
+        } else {
+            previewJob?.cancel()
+            studioTaskJob?.cancel()
+            com.example.audio.StudioPreviewPlayer.stop()
+            studioTaskJob = viewModelScope.launch {
+                _studioTask.value = StudioTask("Learning the noise in \"${song.title}\"…", null)
+                val profile = try { noiseProfileFor(song) {} } catch (e: kotlinx.coroutines.CancellationException) { _studioTask.value = null; throw e } catch (e: Exception) { null }
+                _studioTask.value = null
+                if (profile != null) {
+                    cleanPreviewKey = key
+                    startPreview(spec(profile), from, autoPlay, stem.coerceAtMost(1))
+                } else _statusMessage.value = "Couldn't read this song's audio"
+            }
+        }
+    }
+
+    /** Strength changed while listening: re-render from the same moment, same version, same play/pause. */
+    fun refreshCleanUpPreview(song: Song, s: CleanSettings) {
+        val st = com.example.audio.StudioPreviewPlayer.state.value
+        if (!st.loaded || st.section != SECTION_CLEAN || st.stems.isEmpty() || st.sourceKey != song.uri) return
+        if (isCleanPreviewLoaded(song, s)) return
+        listenCleanUp(song, s, st.activeStem, autoPlay = st.isPlaying)
     }
 
     fun exportCleanUp(song: Song, s: CleanSettings) {
@@ -1274,8 +1334,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val speed = (1.0 + (preset.speed - 1.0) * (0.4 + 0.6 * intensity)).coerceAtLeast(0.1)
         val scale = 1.0 / speed
         startPreview(
-            PreviewSpec(label = "${preset.label}: ${song.title}", durationMs = (song.durationMs * scale).toLong().coerceAtLeast(1000L), sourceKey = song.uri, timeScale = scale, seekable = true) { f, sink ->
-                com.example.audio.StudioJobs.streamInto(com.example.audio.StudioJobs.fxSource(context, song.uri, preset, intensity, (f * speed).toLong(), -1L), sink)
+            PreviewSpec(label = "${preset.label}: ${song.title}", durationMs = (song.durationMs * scale).toLong().coerceAtLeast(1000L), sourceKey = song.uri, timeScale = scale, seekable = true) { f, sinks ->
+                com.example.audio.StudioJobs.streamInto(com.example.audio.StudioJobs.fxSource(context, song.uri, preset, intensity, (f * speed).toLong(), -1L), sinks[0])
             },
             continuePosition(song.uri, scale)
         )
@@ -1377,8 +1437,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 durationMs = (frames * 1000 / 44100).coerceAtLeast(1000L),
                 markers = layers.drop(1).map { it.offsetMs },
                 seekable = false
-            ) { _, sink ->
-                com.example.audio.StudioJobs.streamInto(com.example.audio.StudioJobs.mashupSource(context, layers, s.autoDuck, s.duckAmount), sink, frames)
+            ) { _, sinks ->
+                com.example.audio.StudioJobs.streamInto(com.example.audio.StudioJobs.mashupSource(context, layers, s.autoDuck, s.duckAmount), sinks[0], frames)
             }
         }
     }
@@ -1407,12 +1467,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val context = getApplication<Application>()
         val total = ((endMs - startMs) * 44100 / 1000).coerceAtLeast(1)
         startPreview(
-            PreviewSpec(label = "Ringtone: ${song.title}", durationMs = (endMs - startMs).coerceAtLeast(500L), seekable = false) { _, sink ->
+            PreviewSpec(label = "Ringtone: ${song.title}", durationMs = (endMs - startMs).coerceAtLeast(500L), seekable = false) { _, sinks ->
                 val src = com.example.audio.StudioDsp.GainPanSource(
                     com.example.audio.MixRenderer.decoderFactory(context)(com.example.audio.MixRenderer.MixTrack(song.uri, startMs, endMs)),
                     1f, 0f, fadeInMs * 44100 / 1000, fadeOutMs * 44100 / 1000, total
                 )
-                com.example.audio.StudioJobs.streamInto(src, sink, total)
+                com.example.audio.StudioJobs.streamInto(src, sinks[0], total)
             }
         )
     }

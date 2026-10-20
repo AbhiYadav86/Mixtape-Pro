@@ -200,4 +200,20 @@ class StudioDspTest {
         assertTrue("released $released", released.containsAll(listOf("a", "b")))
         assertEquals(released.size, released.toSet().size)  // each released once
     }
+
+    @Test fun vocalStemsStayAlignedForInstantSwitching() {
+        val mix = gen(3.0) { i -> val t = i.toDouble() / sr; val v = sin(2 * PI * 1000 * t) * 0.3; val g = sin(2 * PI * 500 * t) * 0.3; (v + g).toFloat() to v.toFloat() }
+        val ms = StudioDsp.MultiStft(StudioDsp.ArraySource(mix), listOf(null, StudioDsp.VocalSeparator(StudioDsp.VocalMode.INSTRUMENTAL, 1f), StudioDsp.VocalSeparator(StudioDsp.VocalMode.VOCALS_ONLY, 1f)))
+        val outs = Array(3) { FloatArray(4096 * 2) }
+        val acc = Array(3) { ArrayList<Float>() }
+        while (true) { val k = ms.read(outs, 4096); if (k <= 0) break; for (o in 0 until 3) for (i in 0 until k * 2) acc[o].add(outs[o][i]) }
+        for (o in 0 until 3) assertEquals(mix.size, acc[o].size)
+        var e0 = 0.0; var e1 = 0.0
+        for (i in mix.indices) {
+            e0 = maxOf(e0, abs((acc[0][i] - mix[i]).toDouble()))                    // Original is untouched
+            e1 = maxOf(e1, abs((acc[1][i] + acc[2][i] - mix[i]).toDouble()))        // Instrumental + Vocals = Original
+        }
+        assertTrue("original err $e0", e0 < 1e-4)
+        assertTrue("stems err $e1", e1 < 1e-4)
+    }
 }

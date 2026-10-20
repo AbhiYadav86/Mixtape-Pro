@@ -40,6 +40,36 @@ object StudioJobs {
         if (done == 0L && !sink.cancelled) throw StudioRenderEngine.RenderException("Nothing to preview — the audio couldn't be decoded.")
     }
 
+    /** Stream every stem of [stems] into its own preview buffer, all sample-aligned. */
+    fun streamStemsInto(stems: StudioDsp.MultiStft, sinks: List<StudioPreviewBuffer>) {
+        val bufs = Array(stems.count) { FloatArray(4096 * 2) }
+        var done = 0L
+        try {
+            while (true) {
+                val n = stems.read(bufs, 4096)
+                if (n <= 0) break
+                for (o in 0 until stems.count) {
+                    StudioDsp.softClip(bufs[o], n)
+                    sinks[o].write(bufs[o], n)
+                }
+                done += n
+            }
+        } finally {
+            stems.release()
+        }
+        if (done == 0L && sinks.none { it.cancelled }) throw StudioRenderEngine.RenderException("Nothing to preview — the audio couldn't be decoded.")
+    }
+
+    /** Original + cleaned (noise) or original + instrumental + vocals, in one pass. */
+    fun noiseStems(context: Context, uri: String, profile: StudioDsp.NoiseProfile, strength: Float, inMs: Long) =
+        StudioDsp.MultiStft(decoder(context, uri, inMs, -1L), listOf(null, StudioDsp.NoiseReducer(profile, strength)))
+
+    fun vocalStems(context: Context, uri: String, strength: Float, inMs: Long) =
+        StudioDsp.MultiStft(
+            decoder(context, uri, inMs, -1L),
+            listOf(null, StudioDsp.VocalSeparator(StudioDsp.VocalMode.INSTRUMENTAL, strength), StudioDsp.VocalSeparator(StudioDsp.VocalMode.VOCALS_ONLY, strength))
+        )
+
     /** Render a whole source into shared storage. */
     fun renderFull(
         context: Context,

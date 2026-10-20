@@ -138,7 +138,10 @@ object StudioPreviewPlayer {
         val bufferEndMs: Long = 0L,
         val renderComplete: Boolean = false,
         val markers: List<Long> = emptyList(),
-        val canSeekAnywhere: Boolean = false
+        val canSeekAnywhere: Boolean = false,
+        /** Names of the aligned versions you can switch between instantly (e.g. Original / Instrumental / Vocals). */
+        val stems: List<String> = emptyList(),
+        val activeStem: Int = 0
     )
 
     private val _state = MutableStateFlow(State())
@@ -150,7 +153,8 @@ object StudioPreviewPlayer {
     @Volatile var onStart: (() -> Unit)? = null
 
     private class Session(
-        val buffer: StudioPreviewBuffer,
+        val buffers: List<StudioPreviewBuffer>,
+        val stems: List<String>,
         val label: String,
         val section: String,
         val sourceKey: String,
@@ -162,6 +166,12 @@ object StudioPreviewPlayer {
     ) {
         @Volatile var playing = true
         @Volatile var ended = false
+        @Volatile var active = 0
+        /** Frames ready in every stem. */
+        fun available(): Long = buffers.minOf { it.framesWritten }
+        fun complete(): Boolean = buffers.all { it.complete }
+        val expectedFrames: Long get() = buffers[0].expectedFrames
+        fun cancel() = buffers.forEach { it.cancelAndDelete() }
         val seekFrame = AtomicLong(-1L)
         @Volatile var pos = 0L
     }
@@ -184,21 +194,49 @@ object StudioPreviewPlayer {
         timeScale: Double = 1.0,
         autoPlay: Boolean = true,
         restartAt: ((Long) -> Unit)? = null
+    ) = loadStems(listOf(buffer), emptyList(), 0, label, section, startMs, durationMs, markers, sourceKey, timeScale, autoPlay, restartAt)
+
+    /**
+     * Like [load], with several sample-aligned versions of the same timeline (one buffer each);
+     * [setStem] switches between them instantly while playing.
+     */
+    fun loadStems(
+        buffers: List<StudioPreviewBuffer>,
+        stems: List<String>,
+        activeStem: Int,
+        label: String,
+        section: String,
+        startMs: Long,
+        durationMs: Long,
+        markers: List<Long> = emptyList(),
+        sourceKey: String = "",
+        timeScale: Double = 1.0,
+        autoPlay: Boolean = true,
+        restartAt: ((Long) -> Unit)? = null
     ) {
         val old = session
-        val s = Session(buffer, label, section, sourceKey, timeScale, startMs, max(durationMs, startMs), markers, restartAt)
+        val s = Session(buffers, stems, label, section, sourceKey, timeScale, startMs, max(durationMs, startMs), markers, restartAt)
         s.playing = autoPlay
+        s.active = activeStem.coerceIn(0, buffers.lastIndex)
         val gen = ++generation
         session = s
-        old?.buffer?.cancelAndDelete()
+        old?.cancel()
         if (autoPlay) onStart?.invoke()
         publish(s, buffering = true)
         Thread({ run(s, gen) }, "StudioPreview").apply { priority = Thread.MAX_PRIORITY; start() }
     }
 
+    /** Switch to another stem of the current preview at the same moment (no re-render). */
+    fun setStem(index: Int) {
+        val s = session ?: return
+        if (index !in s.buffers.indices || index == s.active) return
+        s.active = index
+        publish(s)
+    }
+
     fun stop() {
         generation++
-        session?.buffer?.cancelAndDelete()
+        session?.cancel()
         session = null
         _state.value = State()
         _bands.value = FloatArray(BANDS)
@@ -246,8 +284,8 @@ object StudioPreviewPlayer {
     fun seekTo(targetMs: Long) {
         val s = session ?: return
         val t = targetMs.coerceIn(0L, max(0L, s.durationMs - 250))
-        val bufferedEnd = s.startMs + s.buffer.framesWritten * 1000 / SR
-        val inside = t >= s.startMs && (t <= bufferedEnd || (!s.buffer.complete && t <= bufferedEnd + 4000))
+        val bufferedEnd = s.startMs + s.available() * 1000 / SR
+        val inside = t >= s.startMs && (t <= bufferedEnd || (!s.complete() && t <= bufferedEnd + 4000))
         when {
             inside -> {
                 s.ended = false
@@ -258,15 +296,16 @@ object StudioPreviewPlayer {
             else -> {
                 // can't render out of order: jump as far as has been rendered
                 s.ended = false
-                s.seekFrame.set(max(0L, s.buffer.framesWritten - SR / 2))
+                s.seekFrame.set(max(0L, s.available() - SR / 2))
             }
         }
     }
 
     private fun publish(s: Session, buffering: Boolean = false) {
         if (session !== s) return
-        val written = s.buffer.framesWritten
-        val durationMs = if (s.buffer.complete && s.restartAt == null && s.startMs == 0L) written * 1000 / SR else s.durationMs
+        val written = s.available()
+        val complete = s.complete()
+        val durationMs = if (complete && s.restartAt == null && s.startMs == 0L) written * 1000 / SR else s.durationMs
         _state.value = State(
             loaded = true,
             isPlaying = s.playing,
@@ -279,9 +318,11 @@ object StudioPreviewPlayer {
             durationMs = durationMs,
             bufferStartMs = s.startMs,
             bufferEndMs = s.startMs + written * 1000 / SR,
-            renderComplete = s.buffer.complete,
+            renderComplete = complete,
             markers = s.markers,
-            canSeekAnywhere = s.restartAt != null
+            canSeekAnywhere = s.restartAt != null,
+            stems = s.stems,
+            activeStem = s.active
         )
     }
 
@@ -311,6 +352,8 @@ object StudioPreviewPlayer {
         }
 
         val bytes = ByteArray(BLOCK * 4)
+        val prevBytes = ByteArray(BLOCK * 4)
+        var playedStem = s.active
         val mono = FloatArray(2048) // rolling window of the most recent samples
         val re = DoubleArray(2048); val im = DoubleArray(2048)
         val win = StudioDsp.hann(2048)
@@ -338,9 +381,23 @@ object StudioPreviewPlayer {
                     Thread.sleep(25)
                     continue
                 }
-                val n = s.buffer.read(s.pos, bytes, BLOCK)
+                val stem = s.active
+                val avail = s.available() - s.pos
+                val n = if (avail <= 0) 0 else s.buffers[stem].read(s.pos, bytes, min(BLOCK.toLong(), avail).toInt())
+                if (n > 0 && stem != playedStem) {
+                    // switching stems: short crossfade from the old version so there's no click
+                    val m = s.buffers[playedStem].read(s.pos, prevBytes, n)
+                    for (i in 0 until m * 2) {
+                        val g = (i / 2).toFloat() / n
+                        val a = ((prevBytes[i * 2].toInt() and 0xFF) or (prevBytes[i * 2 + 1].toInt() shl 8)).toShort()
+                        val b = ((bytes[i * 2].toInt() and 0xFF) or (bytes[i * 2 + 1].toInt() shl 8)).toShort()
+                        val v = (a * (1f - g) + b * g).toInt()
+                        bytes[i * 2] = (v and 0xFF).toByte(); bytes[i * 2 + 1] = ((v shr 8) and 0xFF).toByte()
+                    }
+                }
+                playedStem = stem
                 if (n <= 0) {
-                    if (s.buffer.complete) {
+                    if (s.complete()) {
                         // reached the end: let the hardware buffer drain, then rewind
                         Thread.sleep(120)
                         if (gen != generation) break

@@ -310,6 +310,15 @@ fun StudioMonitor(
             }
         }
 
+        // ---- versions of the same audio (e.g. Original / Instrumental / Vocals): switch instantly
+        if (state.stems.size > 1) {
+            StudioSegmented(
+                options = state.stems.mapIndexed { i, name -> i to name },
+                selected = state.activeStem,
+                skin = skin
+            ) { i -> StudioPreviewPlayer.setStem(i) }
+        }
+
         // ---- spectrum
         Box(modifier = Modifier.fillMaxWidth().height(height)) {
             val peakColors = skin.eqBarGradient.ifEmpty { listOf(skin.accentColor, skin.accentColor) }
