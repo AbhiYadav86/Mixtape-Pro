@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
@@ -46,11 +47,43 @@ fun LibraryScreen(
     onImportLocalUris: (List<Uri>) -> Unit = {},
     onAddSongToPlaylist: (playlistId: String, song: Song) -> Unit,
     enrichmentProgress: Pair<Int, Int>? = null,
+    isShuffle: Boolean = false,
+    onShuffleAll: (List<Song>) -> Unit = {},
+    onRemoveFromLibrary: (List<Song>) -> Unit = {},
+    onDeletedFromDevice: (List<Song>) -> Unit = {},
+    onRestoreRemoved: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedTab by remember { mutableIntStateOf(0) } // 0: All Tracks, 1: Artist, 2: Genre, 3: Album, 4: Folders, 5: Favorites
     var songForPlaylistPicker by remember { mutableStateOf<Song?>(null) }
+
+    // Selection & delete
+    var selectionMode by remember { mutableStateOf(false) }
+    val selectedIds = remember { mutableStateListOf<String>() }
+    var songsToDelete by remember { mutableStateOf<List<Song>?>(null) }
+    var showLibraryMenu by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val deleteFromDevice = rememberDeviceDeleter { deleted, failed ->
+        val removedOnly = failed.filter { !canDeleteFromDevice(it) }
+        if (deleted.isNotEmpty()) onDeletedFromDevice(deleted)
+        if (removedOnly.isNotEmpty()) onRemoveFromLibrary(removedOnly)
+        val notAllowed = failed.size - removedOnly.size
+        if (notAllowed > 0) {
+            android.widget.Toast.makeText(
+                context,
+                if (deleted.isEmpty()) "Nothing deleted — permission wasn't given" else "$notAllowed file(s) couldn't be deleted",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
+        selectionMode = false
+        selectedIds.clear()
+    }
+    LaunchedEffect(songs) {
+        // forget selections of songs that are gone
+        val ids = songs.map { it.id }.toHashSet()
+        selectedIds.removeAll { it !in ids }
+    }
 
     // SAF Document Picker for local phone audio files
     val documentPickerLauncher = rememberLauncherForActivityResult(
@@ -207,6 +240,93 @@ fun LibraryScreen(
 
         Spacer(modifier = Modifier.height(10.dp))
 
+        // Shuffle / selection actions
+        if (selectionMode) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFF2A1518))
+                    .border(1.dp, Color(0xFFEF4444), RoundedCornerShape(10.dp))
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { selectionMode = false; selectedIds.clear() }) {
+                    Icon(Icons.Default.Close, contentDescription = "Cancel selection", tint = Color.White)
+                }
+                Text("${selectedIds.size} selected", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                TextButton(onClick = {
+                    val all = filteredSongs.map { it.id }
+                    if (selectedIds.containsAll(all)) selectedIds.clear() else { selectedIds.clear(); selectedIds.addAll(all) }
+                }) {
+                    Text(if (filteredSongs.isNotEmpty() && selectedIds.containsAll(filteredSongs.map { it.id })) "None" else "All", color = skin.accentColor, fontWeight = FontWeight.Bold)
+                }
+                Button(
+                    onClick = { songsToDelete = songs.filter { it.id in selectedIds } },
+                    enabled = selectedIds.isNotEmpty(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Delete", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = {
+                        RetroSoundEffects.playClick(RetroSoundEffects.SoundType.CASSETTE_CLACK)
+                        onShuffleAll(filteredSongs)
+                    },
+                    enabled = filteredSongs.isNotEmpty(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = if (isShuffle) skin.accentColor else Color(0xFF1E2430)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, skin.accentColor),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.weight(1f).heightIn(min = 46.dp)
+                ) {
+                    Icon(Icons.Default.Shuffle, contentDescription = null, tint = if (isShuffle) Color.Black else skin.accentColor, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        if (selectedTab == 0 && searchQuery.isBlank()) "Shuffle all" else "Shuffle these",
+                        color = if (isShuffle) Color.Black else Color.White,
+                        fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1
+                    )
+                }
+                OutlinedButton(
+                    onClick = { selectionMode = true },
+                    enabled = songs.isNotEmpty(),
+                    shape = RoundedCornerShape(8.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, skin.chassisBorderColor),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.heightIn(min = 46.dp)
+                ) {
+                    Icon(Icons.Default.Checklist, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Select", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                }
+                Box {
+                    IconButton(onClick = { showLibraryMenu = true }, modifier = Modifier.size(46.dp)) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.White)
+                    }
+                    DropdownMenu(expanded = showLibraryMenu, onDismissRequest = { showLibraryMenu = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Restore removed tracks") },
+                            leadingIcon = { Icon(Icons.Default.Restore, contentDescription = null) },
+                            onClick = { showLibraryMenu = false; onRestoreRemoved() }
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         // Track Count & Format Header
         Row(
             modifier = Modifier
@@ -247,9 +367,20 @@ fun LibraryScreen(
                     isCurrent = isCurrent,
                     isPlaying = isPlaying,
                     skin = skin,
+                    selectionMode = selectionMode,
+                    isSelected = song.id in selectedIds,
+                    onLongPress = {
+                        if (!selectionMode) { selectionMode = true; selectedIds.clear() }
+                        if (song.id !in selectedIds) selectedIds.add(song.id)
+                    },
+                    onDelete = { songsToDelete = listOf(song) },
                     onPlay = {
-                        RetroSoundEffects.playClick(RetroSoundEffects.SoundType.WINAMP_CLICK)
-                        onSongSelected(song)
+                        if (selectionMode) {
+                            if (song.id in selectedIds) selectedIds.removeAll { it == song.id } else selectedIds.add(song.id)
+                        } else {
+                            RetroSoundEffects.playClick(RetroSoundEffects.SoundType.WINAMP_CLICK)
+                            onSongSelected(song)
+                        }
                     },
                     onToggleFavorite = {
                         RetroSoundEffects.playClick(RetroSoundEffects.SoundType.SWITCH_TOGGLE)
@@ -261,6 +392,24 @@ fun LibraryScreen(
                 )
             }
         }
+    }
+
+    songsToDelete?.let { targets ->
+        DeleteTracksDialog(
+            songs = targets,
+            skin = skin,
+            onRemoveFromLibrary = {
+                songsToDelete = null
+                onRemoveFromLibrary(targets)
+                selectionMode = false
+                selectedIds.clear()
+            },
+            onDeleteFromDevice = {
+                songsToDelete = null
+                deleteFromDevice(targets)
+            },
+            onDismiss = { songsToDelete = null }
+        )
     }
 
     // Playlist Picker Dialog
@@ -279,28 +428,43 @@ fun LibraryScreen(
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun SongRowItem(
     song: Song,
     isCurrent: Boolean,
     isPlaying: Boolean,
     skin: RetroSkin,
+    selectionMode: Boolean,
+    isSelected: Boolean,
+    onLongPress: () -> Unit,
+    onDelete: () -> Unit,
     onPlay: () -> Unit,
     onToggleFavorite: () -> Unit,
     onAddToPlaylist: () -> Unit
 ) {
+    var showMenu by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onPlay() }
+            .clip(RoundedCornerShape(8.dp))
+            .combinedClickable(onClick = onPlay, onLongClick = onLongPress)
             .border(
-                width = if (isCurrent) 2.dp else 1.dp,
-                color = if (isCurrent) skin.accentColor else skin.chassisBorderColor.copy(alpha = 0.5f),
+                width = if (isCurrent || isSelected) 2.dp else 1.dp,
+                color = when {
+                    isSelected -> Color(0xFFEF4444)
+                    isCurrent -> skin.accentColor
+                    else -> skin.chassisBorderColor.copy(alpha = 0.5f)
+                },
                 shape = RoundedCornerShape(8.dp)
             ),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isCurrent) Color(0xFF1E2638) else Color(0xDD181B22)
+            containerColor = when {
+                isSelected -> Color(0xFF2A1518)
+                isCurrent -> Color(0xFF1E2638)
+                else -> Color(0xDD181B22)
+            }
         )
     ) {
         Row(
@@ -310,6 +474,14 @@ private fun SongRowItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            if (selectionMode) {
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = { onPlay() },
+                    colors = CheckboxDefaults.colors(checkedColor = Color(0xFFEF4444))
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+            }
             // Album art thumbnail (real cover, or a colourful per-artist tile)
             SongArtThumbnail(
                 song = song,
@@ -380,6 +552,26 @@ private fun SongRowItem(
                         tint = skin.accentColor,
                         modifier = Modifier.size(22.dp)
                     )
+                }
+
+                if (!selectionMode) {
+                    Box {
+                        IconButton(onClick = { showMenu = true }, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color(0xFF94A3B8), modifier = Modifier.size(20.dp))
+                        }
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Select") },
+                                leadingIcon = { Icon(Icons.Default.Checklist, contentDescription = null) },
+                                onClick = { showMenu = false; onLongPress() }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Delete…", color = Color(0xFFEF4444)) },
+                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFEF4444)) },
+                                onClick = { showMenu = false; onDelete() }
+                            )
+                        }
+                    }
                 }
             }
         }

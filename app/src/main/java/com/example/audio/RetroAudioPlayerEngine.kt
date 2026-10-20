@@ -92,6 +92,20 @@ class RetroAudioPlayerEngine(
     val currentLyrics: StateFlow<List<LyricLine>> = _currentLyrics.asStateFlow()
 
     private var currentIndex = -1
+
+    // Shuffle: a random order over the queue; every track plays once before it reshuffles.
+    private var shuffleOrder: MutableList<Int> = mutableListOf()
+    private var shufflePos = 0
+
+    private fun rebuildShuffle(first: Int) {
+        val n = _queue.value.size
+        val order = (0 until n).shuffled().toMutableList()
+        if (first in 0 until n) { order.remove(first); order.add(0, first) }
+        shuffleOrder = order
+        shufflePos = 0
+    }
+
+    private fun shuffleValid() = shuffleOrder.size == _queue.value.size && shuffleOrder.isNotEmpty()
     var onSongPlayed: ((Song) -> Unit)? = null
 
     fun setCrossfadeSeconds(seconds: Int) {
@@ -210,6 +224,7 @@ class RetroAudioPlayerEngine(
 
     fun setQueue(songs: List<Song>, startIndex: Int = 0) {
         _queue.value = songs
+        if (_isShuffle.value) rebuildShuffle(startIndex)
         if (startIndex in songs.indices) {
             playSongAtIndex(startIndex)
         }
@@ -227,10 +242,53 @@ class RetroAudioPlayerEngine(
         }
     }
 
+    /**
+     * Shuffle the whole [songs] list and keep playing tracks automatically in random order
+     * (each once, then a new random order).
+     */
+    fun shufflePlay(songs: List<Song>) {
+        if (songs.isEmpty()) return
+        _isShuffle.value = true
+        if (_repeatMode.value == RepeatMode.ONE) _repeatMode.value = RepeatMode.ALL
+        _queue.value = songs
+        val start = songs.indices.random()
+        rebuildShuffle(start)
+        playSongAtIndex(start)
+    }
+
+    /** Drop tracks (e.g. deleted ones) from the queue; skips ahead if the current one went. */
+    fun removeFromQueue(ids: Set<String>) {
+        val list = _queue.value
+        if (list.none { it.id in ids }) return
+        val currentId = _currentSong.value?.id
+        val remaining = list.filter { it.id !in ids }
+        _queue.value = remaining
+        if (currentId != null && currentId in ids) {
+            val oldIndex = currentIndex
+            val wasPlaying = _isPlaying.value
+            stop()
+            _currentSong.value = null
+            currentIndex = -1
+            if (remaining.isNotEmpty() && wasPlaying) {
+                val next = oldIndex.coerceIn(0, remaining.lastIndex)
+                if (_isShuffle.value) rebuildShuffle(-1)
+                playSongAtIndex(if (_isShuffle.value) shuffleOrder.first() else next)
+            }
+        } else {
+            currentIndex = remaining.indexOfFirst { it.id == currentId }
+            if (_isShuffle.value) rebuildShuffle(currentIndex)
+        }
+    }
+
     fun playSongAtIndex(index: Int) {
         val list = _queue.value
         if (index !in list.indices) return
         currentIndex = index
+        if (_isShuffle.value) {
+            if (!shuffleValid()) rebuildShuffle(index)
+            val p = shuffleOrder.indexOf(index)
+            if (p >= 0) shufflePos = p
+        }
         val song = list[index]
         _currentSong.value = song
         _currentLyrics.value = when {
@@ -500,9 +558,18 @@ class RetroAudioPlayerEngine(
         if (list.isEmpty()) return
 
         if (_isShuffle.value && list.size > 1) {
-            var next = (0 until list.size).random()
-            if (next == currentIndex) next = (next + 1) % list.size
-            playSongAtIndex(next)
+            if (!shuffleValid()) rebuildShuffle(currentIndex)
+            if (shufflePos + 1 >= shuffleOrder.size) {
+                // every track has played: new random order, not starting with the one just heard
+                val last = currentIndex
+                rebuildShuffle(-1)
+                if (shuffleOrder.first() == last && shuffleOrder.size > 1) {
+                    shuffleOrder.removeAt(0); shuffleOrder.add(last)
+                }
+            } else {
+                shufflePos++
+            }
+            playSongAtIndex(shuffleOrder[shufflePos])
         } else {
             val nextIndex = (currentIndex + 1) % list.size
             playSongAtIndex(nextIndex)
@@ -519,6 +586,11 @@ class RetroAudioPlayerEngine(
             return
         }
 
+        if (_isShuffle.value && shuffleValid() && shufflePos > 0) {
+            shufflePos--
+            playSongAtIndex(shuffleOrder[shufflePos])
+            return
+        }
         val prevIndex = if (currentIndex > 0) currentIndex - 1 else list.size - 1
         playSongAtIndex(prevIndex)
     }
@@ -556,6 +628,7 @@ class RetroAudioPlayerEngine(
     fun toggleShuffle() {
         RetroSoundEffects.playClick(RetroSoundEffects.SoundType.SWITCH_TOGGLE)
         _isShuffle.value = !_isShuffle.value
+        if (_isShuffle.value) rebuildShuffle(currentIndex)
     }
 
     private fun handleSongCompletion() {
@@ -584,7 +657,8 @@ class RetroAudioPlayerEngine(
                 nextTrack()
             }
             RepeatMode.OFF -> {
-                if (currentIndex < _queue.value.size - 1) {
+                val more = if (_isShuffle.value && shuffleValid()) shufflePos < shuffleOrder.size - 1 else currentIndex < _queue.value.size - 1
+                if (more) {
                     nextTrack()
                 } else {
                     stop()

@@ -18,28 +18,26 @@ object StudioJobs {
     private fun decoder(context: Context, uri: String, inMs: Long, outMs: Long): MixRenderer.PcmSource =
         MixRenderer.decoderFactory(context)(MixRenderer.MixTrack(uri, inMs, outMs))
 
-    /** Render up to [maxSeconds] of [source] into cache/studio_preview.wav. */
-    fun renderPreview(context: Context, source: MixRenderer.PcmSource, maxSeconds: Int, onProgress: (Float) -> Unit = {}): File {
-        val out = File(context.cacheDir, "studio_preview.wav")
-        val limit = maxSeconds.toLong() * SR
+    /**
+     * Stream [source] into a preview buffer as fast as it decodes (the studio monitor plays it
+     * while it is being written). Stops after [maxFrames] (if > 0) or when the buffer is replaced.
+     */
+    fun streamInto(source: MixRenderer.PcmSource, sink: StudioPreviewBuffer, maxFrames: Long = -1L) {
         val buf = FloatArray(4096 * 2)
         var done = 0L
         try {
-            StudioRenderEngine.WavFileSink(out).use { sink ->
-                while (done < limit) {
-                    val n = source.read(buf, 0, min(4096L, limit - done).toInt())
-                    if (n <= 0) break
-                    StudioDsp.softClip(buf, n)
-                    sink.write(buf, n)
-                    done += n
-                    onProgress(done.toFloat() / limit)
-                }
+            while (maxFrames <= 0 || done < maxFrames) {
+                val want = if (maxFrames > 0) min(4096L, maxFrames - done).toInt() else 4096
+                val n = source.read(buf, 0, want)
+                if (n <= 0) break
+                StudioDsp.softClip(buf, n)
+                sink.write(buf, n)
+                done += n
             }
         } finally {
             source.release()
         }
-        if (done == 0L) throw StudioRenderEngine.RenderException("Nothing to preview — the audio couldn't be decoded.")
-        return out
+        if (done == 0L && !sink.cancelled) throw StudioRenderEngine.RenderException("Nothing to preview — the audio couldn't be decoded.")
     }
 
     /** Render a whole source into shared storage. */

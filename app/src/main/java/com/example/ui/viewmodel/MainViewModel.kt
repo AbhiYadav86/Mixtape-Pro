@@ -499,7 +499,53 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun toggleShuffle() {
+        // Turning shuffle on with nothing (or one song) queued shuffles the whole Library
+        if (!playerEngine.isShuffle.value && playerEngine.queue.value.size <= 1) {
+            shuffleAll()
+            return
+        }
         playerEngine.toggleShuffle()
+        _statusMessage.value = if (playerEngine.isShuffle.value) "Shuffle on" else "Shuffle off"
+    }
+
+    /** Shuffle mode: play every Library track in a random order, one after another. */
+    fun shuffleAll(songs: List<Song> = librarySongs.value) {
+        val playable = songs.filter { it.source != AudioSource.RADIO_STREAM }
+        if (playable.isEmpty()) {
+            _statusMessage.value = "Add some music to the Library first"
+            return
+        }
+        com.example.audio.StudioPreviewPlayer.stop()
+        playerEngine.shufflePlay(playable)
+        _statusMessage.value = "Shuffle on • ${playable.size} tracks"
+    }
+
+    /**
+     * Take songs out of the Library and every mixtape. [deletedFromDevice] = the files are gone;
+     * otherwise the files stay on the phone but won't be re-added by a scan.
+     */
+    fun removeSongsFromLibrary(songs: List<Song>, deletedFromDevice: Boolean) {
+        if (songs.isEmpty()) return
+        val ids = songs.map { it.id }
+        playerEngine.removeFromQueue(ids.toSet())
+        _mixPlan.update { list -> list.filter { it.song.id !in ids } }
+        viewModelScope.launch {
+            repository.removeFromLibrary(ids, keepHidden = !deletedFromDevice)
+            _statusMessage.value = when {
+                deletedFromDevice && songs.size == 1 -> "Deleted \"${songs[0].title}\" from this device"
+                deletedFromDevice -> "Deleted ${songs.size} tracks from this device"
+                songs.size == 1 -> "Removed \"${songs[0].title}\" from the Library"
+                else -> "Removed ${songs.size} tracks from the Library"
+            }
+        }
+    }
+
+    /** Bring back tracks that were removed from the Library (files still on the device). */
+    fun restoreRemovedTracks() {
+        viewModelScope.launch {
+            repository.clearHiddenTracks()
+            syncLocalFolders()
+        }
     }
 
     fun toggleFavorite(song: Song) {
@@ -844,7 +890,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _mixPlan.value = emptyList()
     }
 
-    /** Render ~20 s around the transition after [key] so it can be auditioned before exporting. */
+    /** Audition the transition after [key] (the end of one track into the start of the next). */
     fun previewTransition(key: String) {
         val list = _mixPlan.value
         val i = list.indexOfFirst { it.key == key }
@@ -852,19 +898,47 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val a = list[i]
         val b = list[i + 1]
         val context = getApplication<Application>()
-        _mixPreview.value = MixPreviewState(renderingKey = key)
-        viewModelScope.launch {
-            try {
-                val file = withContext(Dispatchers.IO) {
-                    com.example.audio.MixRenderer.renderTransitionPreview(context, a.toMixTrack(), a.song.durationMs, b.toMixTrack())
-                }
-                _mixPreview.value = MixPreviewState()
-                com.example.audio.StudioPreviewPlayer.playWav(file, "${a.transition.label}: ${a.song.title} → ${b.song.title}")
-            } catch (e: Exception) {
-                _mixPreview.value = MixPreviewState()
-                _statusMessage.value = "Preview failed: ${e.message ?: "couldn't read the audio"}"
+        val (tracks, marker) = com.example.audio.MixRenderer.transitionPreviewTracks(a.toMixTrack(), a.song.durationMs, b.toMixTrack())
+        val overlap = if (a.transition.usesLength) (a.transitionSeconds * 1000).toLong() else 0L
+        val total = tracks.sumOf { (it.outMs - it.inMs).coerceAtLeast(0L) } - overlap
+        startPreview(
+            PreviewSpec(
+                label = "${a.transition.label}: ${a.song.title} → ${b.song.title}",
+                durationMs = total.coerceAtLeast(1000L),
+                markers = listOf(marker),
+                seekable = false
+            ) { _, sink ->
+                com.example.audio.MixRenderer.render(tracks, com.example.audio.MixRenderer.decoderFactory(context), { d, n -> sink.write(d, n) }, 1L) {}
+            }
+        )
+    }
+
+    /** Play the whole mixtape in the studio monitor, with markers at every transition. */
+    fun previewFullMix() {
+        val list = _mixPlan.value
+        if (list.isEmpty()) return
+        val context = getApplication<Application>()
+        val markers = ArrayList<Long>()
+        var t = 0L
+        list.forEachIndexed { i, item ->
+            t += (item.outMs - item.inMs).coerceAtLeast(0L)
+            if (i < list.lastIndex) {
+                if (item.transition.usesLength) t -= (item.transitionSeconds * 1000).toLong()
+                markers.add(t.coerceAtLeast(0L))
             }
         }
+        val needBytes = t * 44100 / 1000 * 4
+        val free = try { android.os.StatFs(context.cacheDir.path).availableBytes } catch (e: Exception) { Long.MAX_VALUE }
+        if (needBytes > free - 50L * 1024 * 1024) {
+            _statusMessage.value = "Not enough free space to preview the whole mix — preview single transitions instead"
+            return
+        }
+        val tracks = list.map { it.toMixTrack() }
+        startPreview(
+            PreviewSpec(label = "Mixtape preview • ${list.size} tracks", durationMs = t.coerceAtLeast(1000L), markers = markers, seekable = false) { _, sink ->
+                com.example.audio.MixRenderer.render(tracks, com.example.audio.MixRenderer.decoderFactory(context), { d, n -> sink.write(d, n) }, 1L) {}
+            }
+        )
     }
 
     fun clearMixPreview() {
@@ -891,45 +965,131 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val studioTask: StateFlow<StudioTask?> = _studioTask.asStateFlow()
     private var studioTaskJob: Job? = null
 
-    /** Run a background studio job that ends by previewing a WAV in the studio monitor. */
-    private fun runPreviewJob(label: String, block: suspend ((Float) -> Unit) -> java.io.File?) {
-        studioTaskJob?.cancel()
-        com.example.audio.StudioPreviewPlayer.stop()
-        studioTaskJob = viewModelScope.launch {
-            _studioTask.value = StudioTask(label, 0f)
+    /** Which DJ Studio section is on screen; previews belong to the section that started them. */
+    @Volatile var studioSection: String = SECTION_MIX
+        private set
+
+    fun setStudioSection(section: String) {
+        if (section == studioSection) return
+        stopStudioAudio()
+        studioSection = section
+    }
+
+    /**
+     * Everything the studio monitor needs to play (and re-render) one preview.
+     * [render] writes the timeline from `fromMs` into the buffer; it runs on a background thread.
+     */
+    private class PreviewSpec(
+        val label: String,
+        val durationMs: Long,
+        val sourceKey: String = "",
+        val timeScale: Double = 1.0,
+        val markers: List<Long> = emptyList(),
+        /** true = seeking anywhere re-renders from there; false = seek inside what's rendered. */
+        val seekable: Boolean,
+        val render: (fromMs: Long, sink: com.example.audio.StudioPreviewBuffer) -> Unit
+    )
+
+    private var previewJob: Job? = null
+
+    private fun startPreview(spec: PreviewSpec, fromMs: Long = 0L, autoPlay: Boolean = true) {
+        previewJob?.cancel()
+        val context = getApplication<Application>()
+        val from = fromMs.coerceIn(0L, (spec.durationMs - 1000L).coerceAtLeast(0L))
+        val buffer = com.example.audio.StudioPreviewBuffer.create(context.cacheDir, (spec.durationMs - from).coerceAtLeast(1000L) * 44100 / 1000)
+        val section = studioSection
+        val restart: ((Long) -> Unit)? =
+            if (spec.seekable) { { t: Long -> startPreview(spec, t, com.example.audio.StudioPreviewPlayer.isActive) } } else null
+        com.example.audio.StudioPreviewPlayer.load(
+            buffer, spec.label, section, from, spec.durationMs, spec.markers, spec.sourceKey, spec.timeScale, autoPlay,
+            restartAt = restart
+        )
+        previewJob = viewModelScope.launch(Dispatchers.IO) {
             try {
-                val file = withContext(Dispatchers.IO) { block { p -> _studioTask.value = StudioTask(label, p) } }
-                _studioTask.value = null
-                if (file != null) com.example.audio.StudioPreviewPlayer.playWav(file, label)
+                spec.render(from, buffer)
+            } catch (e: com.example.audio.StudioPreviewBuffer.Cancelled) {
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _studioTask.value = null
-                _statusMessage.value = e.message ?: "Couldn't prepare the preview"
+                if (!buffer.cancelled) {
+                    if (buffer.framesWritten == 0L) com.example.audio.StudioPreviewPlayer.stop()
+                    _statusMessage.value = "Preview failed: ${e.message ?: "couldn't read the audio"}"
+                }
+            } finally {
+                buffer.finish()
             }
         }
     }
 
+    /** Run a preparation step (analysis) with a status line in the monitor, then start the preview. */
+    private fun preparePreview(label: String, prepare: suspend () -> PreviewSpec?) {
+        previewJob?.cancel()
+        studioTaskJob?.cancel()
+        com.example.audio.StudioPreviewPlayer.stop()
+        studioTaskJob = viewModelScope.launch {
+            _studioTask.value = StudioTask(label, null)
+            val spec = try {
+                prepare()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                _studioTask.value = null
+                throw e
+            } catch (e: Exception) {
+                _statusMessage.value = e.message ?: "Couldn't prepare the preview"
+                null
+            }
+            _studioTask.value = null
+            if (spec != null) startPreview(spec)
+        }
+    }
+
+    /**
+     * Where to start a new preview of [uri]: if the monitor is already playing the same song
+     * (e.g. switching between Original and Result), continue from the same moment.
+     */
+    private fun continuePosition(uri: String, newScale: Double): Long {
+        val st = com.example.audio.StudioPreviewPlayer.state.value
+        if (!st.loaded || st.sourceKey != uri || st.section != studioSection) return 0L
+        return (st.positionMs / st.timeScale * newScale).toLong()
+    }
+
     fun stopStudioAudio() {
         studioTaskJob?.cancel()
+        previewJob?.cancel()
         _studioTask.value = null
         com.example.audio.StudioPreviewPlayer.stop()
     }
 
     fun playOneShot(shot: com.example.audio.MixRenderer.OneShot) {
-        com.example.audio.StudioPreviewPlayer.playPcm(com.example.audio.OneShotSynth.render(shot), shot.label)
+        com.example.audio.StudioPreviewPlayer.playOneShot(com.example.audio.OneShotSynth.render(shot))
     }
 
-    /** Preview the original audio of a song from [startMs] (for A/B comparisons). */
-    fun previewOriginal(song: Song, startMs: Long, seconds: Int = 20) {
+    /** Play a song's original audio in the studio monitor (never in the main player). */
+    fun previewOriginal(song: Song, startMs: Long = -1L) =
+        previewSource(song.uri, "Original: ${song.title}", song.durationMs, startMs)
+
+    /** Play any audio file in the studio monitor, seekable end to end. */
+    fun previewSource(uri: String, label: String, durationMs: Long, startMs: Long = -1L) {
         val context = getApplication<Application>()
-        runPreviewJob("Original: ${song.title}") { p ->
-            com.example.audio.StudioJobs.renderPreview(
-                context,
-                com.example.audio.MixRenderer.decoderFactory(context)(com.example.audio.MixRenderer.MixTrack(song.uri, startMs, startMs + seconds * 1000L)),
-                seconds, p
-            )
-        }
+        val dur = if (durationMs > 0) durationMs else com.example.audio.StudioRenderEngine.durationMs(context, uri)
+        val from = if (startMs >= 0) startMs else continuePosition(uri, 1.0)
+        startPreview(
+            PreviewSpec(label = label, durationMs = dur.coerceAtLeast(1000L), sourceKey = uri, seekable = true) { f, sink ->
+                com.example.audio.StudioJobs.streamInto(
+                    com.example.audio.MixRenderer.decoderFactory(context)(com.example.audio.MixRenderer.MixTrack(uri, f, -1L)), sink
+                )
+            },
+            from
+        )
+    }
+
+    /** "Play" on a finished export: listen to it in the studio monitor, not the main player. */
+    fun playStudioResult(song: Song) = previewSource(song.uri, "Saved: ${song.title}", song.durationMs, 0L)
+
+    companion object {
+        const val SECTION_MIX = "MIX"
+        const val SECTION_CLEAN = "CLEAN"
+        const val SECTION_FX = "FX"
+        const val SECTION_RINGTONE = "RINGTONE"
     }
 
     // =============================================================================================
@@ -1025,29 +1185,55 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun previewCleanUp(song: Song, s: CleanSettings, startMs: Long) {
+    fun previewCleanUp(song: Song, s: CleanSettings) {
         val context = getApplication<Application>()
-        if (s.tool == CleanTool.CUT) {
-            // play 6 s before the cut and 6 s after it, joined the way the export will be
-            runPreviewJob("Cut preview: ${song.title}") { p ->
-                val before = (s.cutStartMs - 6000).coerceAtLeast(0L)
-                val parts = listOfNotNull(
-                    if (s.cutStartMs > 200) StudioRenderEngine.RenderPart(song.uri, before, s.cutStartMs) else null,
-                    StudioRenderEngine.RenderPart(song.uri, s.cutEndMs, s.cutEndMs + 6000)
+        val dur = song.durationMs.coerceAtLeast(1000L)
+        when (s.tool) {
+            CleanTool.CUT -> {
+                // the whole song with the section removed; starts 6 s before the join
+                val cutLen = (s.cutEndMs - s.cutStartMs).coerceAtLeast(0L)
+                startPreview(
+                    PreviewSpec(label = "Cut preview: ${song.title}", durationMs = (dur - cutLen).coerceAtLeast(1000L), markers = listOf(s.cutStartMs), seekable = true) { f, sink ->
+                        fun part(a: Long, b: Long) = com.example.audio.MixRenderer.MixTrack(
+                            song.uri, a, b, transition = com.example.audio.MixRenderer.Transition.CROSSFADE, transitionSeconds = 0.05f
+                        )
+                        val parts = if (f < s.cutStartMs) listOf(part(f, s.cutStartMs), part(s.cutEndMs, -1L)) else listOf(part(s.cutEndMs + (f - s.cutStartMs), -1L))
+                        com.example.audio.MixRenderer.render(parts, com.example.audio.MixRenderer.decoderFactory(context), { d, n -> sink.write(d, n) }, 1L) {}
+                    },
+                    (s.cutStartMs - 6000).coerceAtLeast(0L)
                 )
-                val srcs = parts.map { part -> com.example.audio.MixRenderer.MixTrack(part.uri, part.startMs, part.endMs, transition = com.example.audio.MixRenderer.Transition.CROSSFADE, transitionSeconds = 1f) }
-                val out = java.io.File(context.cacheDir, "studio_preview.wav")
-                StudioRenderEngine.WavFileSink(out).use { sink ->
-                    com.example.audio.MixRenderer.render(srcs, com.example.audio.MixRenderer.decoderFactory(context), { d, n -> sink.write(d, n) }, 12L * 44100, p)
-                }
-                out
             }
-            return
-        }
-        val label = if (s.tool == CleanTool.NOISE) "Noise removed: ${song.title}" else "${if (s.vocalMode == com.example.audio.StudioDsp.VocalMode.INSTRUMENTAL) "Instrumental" else "Vocals only"}: ${song.title}"
-        runPreviewJob(label) { p ->
-            val profile = if (s.tool == CleanTool.NOISE) noiseProfileFor(song) { p(it) } else null
-            com.example.audio.StudioJobs.renderPreview(context, cleanSource(song, s, profile, startMs, startMs + 20_000), 20) { p(0.2f + 0.8f * it) }
+            CleanTool.VOCALS -> {
+                val label = "${if (s.vocalMode == com.example.audio.StudioDsp.VocalMode.INSTRUMENTAL) "Instrumental" else "Vocals only"}: ${song.title}"
+                startPreview(
+                    PreviewSpec(label = label, durationMs = dur, sourceKey = song.uri, seekable = true) { f, sink ->
+                        com.example.audio.StudioJobs.streamInto(cleanSource(song, s, null, f, -1L), sink)
+                    },
+                    continuePosition(song.uri, 1.0)
+                )
+            }
+            CleanTool.NOISE -> {
+                val from = continuePosition(song.uri, 1.0)
+                val spec = { profile: com.example.audio.StudioDsp.NoiseProfile ->
+                    PreviewSpec(label = "Noise removed: ${song.title}", durationMs = dur, sourceKey = song.uri, seekable = true) { f, sink ->
+                        com.example.audio.StudioJobs.streamInto(cleanSource(song, s, profile, f, -1L), sink)
+                    }
+                }
+                val cached = noiseProfiles[song.uri]
+                if (cached != null) {
+                    startPreview(spec(cached), from)
+                } else {
+                    previewJob?.cancel()
+                    studioTaskJob?.cancel()
+                    com.example.audio.StudioPreviewPlayer.stop()
+                    studioTaskJob = viewModelScope.launch {
+                        _studioTask.value = StudioTask("Learning the noise in \"${song.title}\"…", null)
+                        val profile = try { noiseProfileFor(song) {} } catch (e: kotlinx.coroutines.CancellationException) { _studioTask.value = null; throw e } catch (e: Exception) { null }
+                        _studioTask.value = null
+                        if (profile != null) startPreview(spec(profile), from) else _statusMessage.value = "Couldn't read this song's audio"
+                    }
+                }
+            }
         }
     }
 
@@ -1082,11 +1268,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // FX & MASHUP STUDIO
     // =============================================================================================
 
-    fun previewFx(song: Song, preset: com.example.audio.StudioDsp.RetroPreset, intensity: Float, startMs: Long) {
+    fun previewFx(song: Song, preset: com.example.audio.StudioDsp.RetroPreset, intensity: Float) {
         val context = getApplication<Application>()
-        runPreviewJob("${preset.label}: ${song.title}") { p ->
-            com.example.audio.StudioJobs.renderPreview(context, com.example.audio.StudioJobs.fxSource(context, song.uri, preset, intensity, startMs, startMs + 30_000), 25, p)
-        }
+        // same rate StudioDsp.retroChain uses (intensity scales how far the speed moves from 1.0)
+        val speed = (1.0 + (preset.speed - 1.0) * (0.4 + 0.6 * intensity)).coerceAtLeast(0.1)
+        val scale = 1.0 / speed
+        startPreview(
+            PreviewSpec(label = "${preset.label}: ${song.title}", durationMs = (song.durationMs * scale).toLong().coerceAtLeast(1000L), sourceKey = song.uri, timeScale = scale, seekable = true) { f, sink ->
+                com.example.audio.StudioJobs.streamInto(com.example.audio.StudioJobs.fxSource(context, song.uri, preset, intensity, (f * speed).toLong(), -1L), sink)
+            },
+            continuePosition(song.uri, scale)
+        )
     }
 
     fun exportFx(song: Song, preset: com.example.audio.StudioDsp.RetroPreset, intensity: Float) {
@@ -1176,10 +1368,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun previewMashup() {
         if (_mashupLayers.value.isEmpty()) return
         val context = getApplication<Application>()
-        runPreviewJob("Mashup preview") { p ->
+        preparePreview("Lining up the layers…") {
             val layers = alignedLayers { label -> _studioTask.value = StudioTask(label, null) }
             val s = _mashupSettings.value
-            com.example.audio.StudioJobs.renderPreview(context, com.example.audio.StudioJobs.mashupSource(context, layers, s.autoDuck, s.duckAmount), 30, p)
+            val frames = com.example.audio.StudioJobs.mashupFrames(layers)
+            PreviewSpec(
+                label = "Mashup preview • ${layers.size} layers",
+                durationMs = (frames * 1000 / 44100).coerceAtLeast(1000L),
+                markers = layers.drop(1).map { it.offsetMs },
+                seekable = false
+            ) { _, sink ->
+                com.example.audio.StudioJobs.streamInto(com.example.audio.StudioJobs.mashupSource(context, layers, s.autoDuck, s.duckAmount), sink, frames)
+            }
         }
     }
 
@@ -1205,14 +1405,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun previewRingtone(song: Song, startMs: Long, endMs: Long, fadeInMs: Long, fadeOutMs: Long) {
         val context = getApplication<Application>()
-        runPreviewJob("Ringtone: ${song.title}") { p ->
-            val total = ((endMs - startMs) * 44100 / 1000).coerceAtLeast(1)
-            val src = com.example.audio.StudioDsp.GainPanSource(
-                com.example.audio.MixRenderer.decoderFactory(context)(com.example.audio.MixRenderer.MixTrack(song.uri, startMs, endMs)),
-                1f, 0f, fadeInMs * 44100 / 1000, fadeOutMs * 44100 / 1000, total
-            )
-            com.example.audio.StudioJobs.renderPreview(context, src, 60, p)
-        }
+        val total = ((endMs - startMs) * 44100 / 1000).coerceAtLeast(1)
+        startPreview(
+            PreviewSpec(label = "Ringtone: ${song.title}", durationMs = (endMs - startMs).coerceAtLeast(500L), seekable = false) { _, sink ->
+                val src = com.example.audio.StudioDsp.GainPanSource(
+                    com.example.audio.MixRenderer.decoderFactory(context)(com.example.audio.MixRenderer.MixTrack(song.uri, startMs, endMs)),
+                    1f, 0f, fadeInMs * 44100 / 1000, fadeOutMs * 44100 / 1000, total
+                )
+                com.example.audio.StudioJobs.streamInto(src, sink, total)
+            }
+        )
     }
 
     fun importGoogleDriveLink(link: String, title: String, artist: String) {

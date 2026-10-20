@@ -13,6 +13,7 @@ import java.io.FileOutputStream
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.log10
 import kotlin.math.max
 import kotlin.math.min
@@ -20,22 +21,124 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 /**
- * The single audio output used by every DJ Studio section for previews, auditions and one-shots.
- * It plays 44.1 kHz stereo PCM (from a WAV we rendered, or an in-memory buffer) through an
- * AudioTrack and publishes a live spectrum for the studio's analyzer display.
+ * A preview being rendered to a 16-bit stereo 44.1 kHz WAV in the cache, which can be played
+ * while it is still being written. The renderer calls [write]; the player reads whatever has
+ * been written so far. Cancelling it makes the next [write] throw, which stops the renderer.
+ */
+class StudioPreviewBuffer(val file: File, @Volatile var expectedFrames: Long) {
+    class Cancelled : RuntimeException("preview replaced")
+
+    private val writer = RandomAccessFile(file, "rw").apply { setLength(0); write(ByteArray(44)) }
+    private var reader: RandomAccessFile? = null
+    private val bytes = ByteBuffer.allocate(4096 * 4).order(ByteOrder.LITTLE_ENDIAN)
+
+    @Volatile var framesWritten = 0L
+        private set
+    @Volatile var complete = false
+        private set
+    @Volatile var cancelled = false
+        private set
+
+    /** Write interleaved stereo float frames. */
+    fun write(data: FloatArray, frames: Int) {
+        if (cancelled) throw Cancelled()
+        var f = 0
+        while (f < frames) {
+            val n = min(frames - f, 4096)
+            bytes.clear()
+            for (i in 0 until n * 2) {
+                val v = (data[(f * 2) + i].coerceIn(-1f, 1f) * 32767f).toInt()
+                bytes.putShort(v.toShort())
+            }
+            synchronized(writer) {
+                writer.seek(44 + framesWritten * 4)
+                writer.write(bytes.array(), 0, n * 4)
+            }
+            framesWritten += n
+            f += n
+        }
+    }
+
+    /** Mark the render finished and write a proper WAV header. */
+    fun finish() {
+        if (complete) return
+        complete = true
+        try {
+            val dataLen = framesWritten * 4
+            val h = ByteBuffer.allocate(44).order(ByteOrder.LITTLE_ENDIAN)
+            h.put("RIFF".toByteArray(Charsets.US_ASCII)); h.putInt((36 + dataLen).toInt())
+            h.put("WAVE".toByteArray(Charsets.US_ASCII)); h.put("fmt ".toByteArray(Charsets.US_ASCII))
+            h.putInt(16); h.putShort(1); h.putShort(2); h.putInt(44100); h.putInt(44100 * 4); h.putShort(4); h.putShort(16)
+            h.put("data".toByteArray(Charsets.US_ASCII)); h.putInt(dataLen.toInt())
+            synchronized(writer) { writer.seek(0); writer.write(h.array()); writer.close() }
+        } catch (_: Exception) {}
+    }
+
+    /** Read up to [frames] frames of 16-bit PCM starting at [frame]. Returns frames read. */
+    fun read(frame: Long, out: ByteArray, frames: Int): Int {
+        val avail = framesWritten - frame
+        if (avail <= 0) return 0
+        val n = min(frames.toLong(), avail).toInt()
+        val r = reader ?: RandomAccessFile(file, "r").also { reader = it }
+        r.seek(44 + frame * 4)
+        r.readFully(out, 0, n * 4)
+        return n
+    }
+
+    fun cancelAndDelete() {
+        cancelled = true
+        complete = true
+        try { reader?.close() } catch (_: Exception) {}
+        reader = null
+        try { synchronized(writer) { writer.close() } } catch (_: Exception) {}
+        file.delete()
+    }
+
+    companion object {
+        private var counter = 0
+        fun create(cacheDir: File, expectedFrames: Long): StudioPreviewBuffer {
+            val dir = File(cacheDir, "studio_preview").apply { mkdirs() }
+            // clear leftovers from earlier sessions
+            dir.listFiles()?.filter { System.currentTimeMillis() - it.lastModified() > 60_000 }?.forEach { it.delete() }
+            return StudioPreviewBuffer(File(dir, "preview_${System.currentTimeMillis()}_${counter++}.wav"), expectedFrames)
+        }
+    }
+}
+
+/**
+ * The single audio output used by every DJ Studio section for previews.
  *
- * Whenever it starts, [onStart] is invoked — the app uses it to pause the main player
- * (song or radio) so the two never play over each other.
+ * A preview is a timeline (e.g. a whole song with FX applied) of which [StudioPreviewBuffer]
+ * holds the part starting at `bufferStartMs`. The player plays it with pause/resume and
+ * seeking, and publishes a live spectrum for the studio monitor. Seeking outside the rendered
+ * part asks the owner (via `restartAt`) to render again from there.
+ *
+ * Whenever it starts or resumes, [onStart] is invoked — the app uses it to pause the main
+ * player (song or radio) so the two never play over each other.
  */
 object StudioPreviewPlayer {
     private const val SR = StudioRenderEngine.SAMPLE_RATE
     const val BANDS = 24
+    private const val BLOCK = 1024
 
     data class State(
+        val loaded: Boolean = false,
         val isPlaying: Boolean = false,
+        val isBuffering: Boolean = false,
         val label: String = "",
+        /** Which studio section started this preview. */
+        val section: String = "",
+        /** Identifies what is being previewed (e.g. a song uri) so A/B switches keep position. */
+        val sourceKey: String = "",
+        /** Timeline ms per source-file ms (≠ 1 when FX change the speed). */
+        val timeScale: Double = 1.0,
         val positionMs: Long = 0L,
-        val durationMs: Long = 0L
+        val durationMs: Long = 0L,
+        val bufferStartMs: Long = 0L,
+        val bufferEndMs: Long = 0L,
+        val renderComplete: Boolean = false,
+        val markers: List<Long> = emptyList(),
+        val canSeekAnywhere: Boolean = false
     )
 
     private val _state = MutableStateFlow(State())
@@ -46,33 +149,143 @@ object StudioPreviewPlayer {
 
     @Volatile var onStart: (() -> Unit)? = null
 
-    @Volatile private var generation = 0
-    private var thread: Thread? = null
-
-    fun playWav(file: File, label: String) {
-        val data = readWav(file) ?: return
-        playPcm(data, label)
+    private class Session(
+        val buffer: StudioPreviewBuffer,
+        val label: String,
+        val section: String,
+        val sourceKey: String,
+        val timeScale: Double,
+        val startMs: Long,
+        val durationMs: Long,
+        val markers: List<Long>,
+        val restartAt: ((Long) -> Unit)?
+    ) {
+        @Volatile var playing = true
+        @Volatile var ended = false
+        val seekFrame = AtomicLong(-1L)
+        @Volatile var pos = 0L
     }
 
-    fun playPcm(pcm: FloatArray, label: String) {
-        stop()
-        onStart?.invoke()
+    @Volatile private var session: Session? = null
+    @Volatile private var generation = 0
+
+    /**
+     * Start playing [buffer] (which is being rendered) as the part of a [durationMs]-long timeline
+     * that starts at [startMs]. Replaces whatever was loaded.
+     */
+    fun load(
+        buffer: StudioPreviewBuffer,
+        label: String,
+        section: String,
+        startMs: Long,
+        durationMs: Long,
+        markers: List<Long> = emptyList(),
+        sourceKey: String = "",
+        timeScale: Double = 1.0,
+        autoPlay: Boolean = true,
+        restartAt: ((Long) -> Unit)? = null
+    ) {
+        val old = session
+        val s = Session(buffer, label, section, sourceKey, timeScale, startMs, max(durationMs, startMs), markers, restartAt)
+        s.playing = autoPlay
         val gen = ++generation
-        val totalFrames = pcm.size / 2
-        _state.value = State(true, label, 0L, totalFrames * 1000L / SR)
-        thread = Thread({ run(pcm, gen, label) }, "StudioPreview").apply { start() }
+        session = s
+        old?.buffer?.cancelAndDelete()
+        if (autoPlay) onStart?.invoke()
+        publish(s, buffering = true)
+        Thread({ run(s, gen) }, "StudioPreview").apply { priority = Thread.MAX_PRIORITY; start() }
     }
 
     fun stop() {
         generation++
-        thread = null
-        _state.value = _state.value.copy(isPlaying = false)
+        session?.buffer?.cancelAndDelete()
+        session = null
+        _state.value = State()
         _bands.value = FloatArray(BANDS)
     }
 
-    private fun run(pcm: FloatArray, gen: Int, label: String) {
-        val totalFrames = pcm.size / 2
-        val block = 1024
+    /** Stop only if the current preview belongs to [section]. */
+    fun stopIfSection(section: String) {
+        if (session?.section == section) stop()
+    }
+
+    val isActive: Boolean get() = session?.playing == true
+
+    fun togglePlayPause() {
+        val s = session ?: return
+        if (s.playing) pause() else resume()
+    }
+
+    fun pause() {
+        val s = session ?: return
+        s.playing = false
+        publish(s)
+    }
+
+    fun resume() {
+        val s = session ?: return
+        if (s.ended) {
+            s.ended = false
+            seekTo(0L)
+            s.playing = true
+            onStart?.invoke()
+            session?.let { it.playing = true; publish(it) }
+            return
+        }
+        s.playing = true
+        onStart?.invoke()
+        publish(s)
+    }
+
+    /** Current position on the timeline. */
+    fun positionMs(): Long = session?.let { it.startMs + it.pos * 1000 / SR } ?: 0L
+
+    fun seekBy(deltaMs: Long) = seekTo(positionMs() + deltaMs)
+
+    /** Seek to a position on the timeline (ms). */
+    fun seekTo(targetMs: Long) {
+        val s = session ?: return
+        val t = targetMs.coerceIn(0L, max(0L, s.durationMs - 250))
+        val bufferedEnd = s.startMs + s.buffer.framesWritten * 1000 / SR
+        val inside = t >= s.startMs && (t <= bufferedEnd || (!s.buffer.complete && t <= bufferedEnd + 4000))
+        when {
+            inside -> {
+                s.ended = false
+                s.seekFrame.set((t - s.startMs) * SR / 1000)
+            }
+            s.restartAt != null -> s.restartAt.invoke(t)
+            t < s.startMs -> s.seekFrame.set(0L)
+            else -> {
+                // can't render out of order: jump as far as has been rendered
+                s.ended = false
+                s.seekFrame.set(max(0L, s.buffer.framesWritten - SR / 2))
+            }
+        }
+    }
+
+    private fun publish(s: Session, buffering: Boolean = false) {
+        if (session !== s) return
+        val written = s.buffer.framesWritten
+        val durationMs = if (s.buffer.complete && s.restartAt == null && s.startMs == 0L) written * 1000 / SR else s.durationMs
+        _state.value = State(
+            loaded = true,
+            isPlaying = s.playing,
+            isBuffering = buffering && s.playing,
+            label = s.label,
+            section = s.section,
+            sourceKey = s.sourceKey,
+            timeScale = s.timeScale,
+            positionMs = (s.startMs + s.pos * 1000 / SR).coerceAtMost(max(durationMs, 0L)),
+            durationMs = durationMs,
+            bufferStartMs = s.startMs,
+            bufferEndMs = s.startMs + written * 1000 / SR,
+            renderComplete = s.buffer.complete,
+            markers = s.markers,
+            canSeekAnywhere = s.restartAt != null
+        )
+    }
+
+    private fun run(s: Session, gen: Int) {
         val minBuf = AudioTrack.getMinBufferSize(SR, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT)
         val track = try {
             AudioTrack.Builder()
@@ -90,36 +303,68 @@ object StudioPreviewPlayer {
                         .build()
                 )
                 .setTransferMode(AudioTrack.MODE_STREAM)
-                .setBufferSizeInBytes(max(minBuf, block * 4 * 4))
+                .setBufferSizeInBytes(max(minBuf, BLOCK * 4 * 4))
                 .build()
         } catch (e: Exception) {
-            _state.value = State()
+            if (gen == generation) stop()
             return
         }
 
-        val shorts = ShortArray(block * 2)
+        val bytes = ByteArray(BLOCK * 4)
+        val mono = FloatArray(2048) // rolling window of the most recent samples
         val re = DoubleArray(2048); val im = DoubleArray(2048)
         val win = StudioDsp.hann(2048)
         val smooth = FloatArray(BANDS)
         val edges = IntArray(BANDS + 1) { b ->
-            // log-spaced band edges 40 Hz .. 16 kHz in FFT bins
             val f = 40.0 * (16000.0 / 40.0).pow(b.toDouble() / BANDS)
             (f * 2048 / SR).toInt().coerceIn(1, 1023)
         }
+        var trackRunning = false
+        var lastPublish = 0L
         try {
-            track.play()
-            var pos = 0
-            while (pos < totalFrames && gen == generation) {
-                val n = min(block, totalFrames - pos)
-                for (i in 0 until n * 2) shorts[i] = (pcm[pos * 2 + i].coerceIn(-1f, 1f) * 32767f).toInt().toShort()
-
-                // Spectrum of the block about to play (2048-point window centred on it)
-                val start = (pos - 512).coerceAtLeast(0)
-                for (k in 0 until 2048) {
-                    val idx = start + k
-                    val v = if (idx < totalFrames) (pcm[idx * 2] + pcm[idx * 2 + 1]) * 0.5 else 0f
-                    re[k] = v.toDouble() * win[k]; im[k] = 0.0
+            while (gen == generation) {
+                val seek = s.seekFrame.getAndSet(-1L)
+                if (seek >= 0) {
+                    s.pos = seek
+                    if (trackRunning) { track.pause(); track.flush(); trackRunning = false }
+                    java.util.Arrays.fill(mono, 0f)
+                    publish(s)
                 }
+                if (!s.playing) {
+                    if (trackRunning) { track.pause(); trackRunning = false }
+                    var any = false
+                    for (b in 0 until BANDS) { smooth[b] *= 0.8f; if (smooth[b] > 0.01f) any = true }
+                    _bands.value = if (any) smooth.copyOf() else FloatArray(BANDS)
+                    Thread.sleep(25)
+                    continue
+                }
+                val n = s.buffer.read(s.pos, bytes, BLOCK)
+                if (n <= 0) {
+                    if (s.buffer.complete) {
+                        // reached the end: let the hardware buffer drain, then rewind
+                        Thread.sleep(120)
+                        if (gen != generation) break
+                        if (trackRunning) { track.pause(); track.flush(); trackRunning = false }
+                        s.playing = false
+                        s.ended = true
+                        _bands.value = FloatArray(BANDS)
+                        publish(s)
+                    } else {
+                        publish(s, buffering = true)
+                        Thread.sleep(25)
+                    }
+                    continue
+                }
+                if (!trackRunning) { track.play(); trackRunning = true }
+
+                // spectrum of the newest 2048 samples
+                System.arraycopy(mono, n, mono, 0, 2048 - n)
+                for (i in 0 until n) {
+                    val l = ((bytes[i * 4].toInt() and 0xFF) or (bytes[i * 4 + 1].toInt() shl 8)).toShort()
+                    val r = ((bytes[i * 4 + 2].toInt() and 0xFF) or (bytes[i * 4 + 3].toInt() shl 8)).toShort()
+                    mono[2048 - n + i] = (l + r) / 65536f
+                }
+                for (k in 0 until 2048) { re[k] = mono[k] * win[k]; im[k] = 0.0 }
                 StudioDsp.fft(re, im)
                 val out = FloatArray(BANDS)
                 for (b in 0 until BANDS) {
@@ -128,43 +373,53 @@ object StudioPreviewPlayer {
                         val m = sqrt(re[k] * re[k] + im[k] * im[k])
                         if (m > peak) peak = m
                     }
-                    val db = 20 * log10(peak / 512.0 + 1e-6)          // ~ dBFS
+                    val db = 20 * log10(peak / 512.0 + 1e-6)
                     val level = ((db + 60) / 60).toFloat().coerceIn(0f, 1f)
                     smooth[b] = if (level > smooth[b]) level else smooth[b] * 0.82f + level * 0.18f
                     out[b] = smooth[b]
                 }
                 _bands.value = out
 
-                track.write(shorts, 0, n * 2)
-                pos += n
-                _state.value = State(true, label, pos * 1000L / SR, totalFrames * 1000L / SR)
+                track.write(bytes, 0, n * 4)
+                s.pos += n
+                val now = System.currentTimeMillis()
+                if (now - lastPublish > 80) { publish(s); lastPublish = now }
             }
-            if (gen == generation) {
-                // let the buffer drain
-                Thread.sleep(150)
-            }
+        } catch (_: InterruptedException) {
         } catch (_: Exception) {
         } finally {
             try { track.stop() } catch (_: Exception) {}
             track.release()
-            if (gen == generation) {
-                _state.value = State(false, label, 0L, totalFrames * 1000L / SR)
-                _bands.value = FloatArray(BANDS)
-            }
         }
     }
 
-    /** Reads the 16-bit stereo 44.1 kHz WAVs written by [StudioRenderEngine.WavFileSink]. */
-    fun readWav(file: File): FloatArray? {
-        return try {
-            val bytes = file.readBytes()
-            if (bytes.size <= 44) return null
-            val bb = ByteBuffer.wrap(bytes, 44, bytes.size - 44).order(ByteOrder.LITTLE_ENDIAN)
-            val count = (bytes.size - 44) / 2
-            FloatArray(count) { bb.short / 32768f }
-        } catch (e: Exception) {
-            null
-        }
+    // ---------------------------------------------------------------------------------------------
+    // One-shot pads: fire-and-forget, so they can be played over a running preview.
+    // ---------------------------------------------------------------------------------------------
+
+    fun playOneShot(pcm: FloatArray) {
+        if (pcm.isEmpty()) return
+        if (session?.playing != true) onStart?.invoke()
+        Thread({
+            val shorts = ShortArray(pcm.size) { (pcm[it].coerceIn(-1f, 1f) * 32767f).toInt().toShort() }
+            val track = try {
+                AudioTrack.Builder()
+                    .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
+                    .setAudioFormat(AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(SR).setChannelMask(AudioFormat.CHANNEL_OUT_STEREO).build())
+                    .setTransferMode(AudioTrack.MODE_STATIC)
+                    .setBufferSizeInBytes(shorts.size * 2)
+                    .build()
+            } catch (e: Exception) { return@Thread }
+            try {
+                track.write(shorts, 0, shorts.size)
+                track.play()
+                Thread.sleep(shorts.size / 2 * 1000L / SR + 100)
+            } catch (_: Exception) {
+            } finally {
+                try { track.stop() } catch (_: Exception) {}
+                track.release()
+            }
+        }, "OneShot").start()
     }
 }
 

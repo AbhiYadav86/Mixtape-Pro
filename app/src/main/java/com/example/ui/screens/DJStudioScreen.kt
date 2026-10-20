@@ -1017,6 +1017,20 @@ fun DJStudioScreen(
 
         val studioInitialSong = currentSong?.takeIf { it.source == com.example.data.model.AudioSource.LOCAL } ?: allSongs.firstOrNull()
         if (studioVm != null) {
+            // Each section owns its monitor; switching sections or leaving the studio stops studio audio.
+            LaunchedEffect(studioMode) {
+                studioVm.setStudioSection(
+                    when (studioMode) {
+                        0 -> com.example.ui.viewmodel.MainViewModel.SECTION_MIX
+                        1 -> com.example.ui.viewmodel.MainViewModel.SECTION_CLEAN
+                        2 -> com.example.ui.viewmodel.MainViewModel.SECTION_FX
+                        else -> com.example.ui.viewmodel.MainViewModel.SECTION_RINGTONE
+                    }
+                )
+            }
+            DisposableEffect(studioVm) { onDispose { studioVm.stopStudioAudio() } }
+            // Finished exports play in the studio monitor, not the main player
+            val playResult: (Song) -> Unit = { song -> studioVm.playStudioResult(song) }
             when (studioMode) {
                 0 -> MixtapeBuilderPanel(
                     viewModel = studioVm,
@@ -1024,10 +1038,10 @@ fun DJStudioScreen(
                     playlists = studioPlaylists,
                     skin = skin,
                     exportState = exportState,
-                    onPlayExport = onPlaySong
+                    onPlayExport = playResult
                 )
-                1 -> CleanUpStudioPanel(studioVm, allSongs, studioInitialSong, skin, exportState, onPlaySong)
-                2 -> FxMashupPanel(studioVm, allSongs, studioInitialSong, skin, exportState, onPlaySong)
+                1 -> CleanUpStudioPanel(studioVm, allSongs, studioInitialSong, skin, exportState, playResult)
+                2 -> FxMashupPanel(studioVm, allSongs, studioInitialSong, skin, exportState, playResult)
                 else -> RingtoneMakerPanel(
                     songs = allSongs,
                     initialSong = studioInitialSong,
@@ -1035,7 +1049,7 @@ fun DJStudioScreen(
                     exportState = exportState,
                     onBeforePreview = { notifyEditingOrStudioPlayback() },
                     onExport = onExportRingtone,
-                    onPlayExport = onPlaySong,
+                    onPlayExport = playResult,
                     onDismissExport = onDismissExport,
                     viewModel = studioVm
                 )

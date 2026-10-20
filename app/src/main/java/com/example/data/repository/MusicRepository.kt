@@ -28,6 +28,10 @@ class MusicRepository(
     private val context: Context,
     private val appDao: AppDao
 ) {
+    companion object {
+        private const val PREF_HIDDEN = "library_hidden_ids"
+    }
+
     private val metadataService = RetroMetadataService(context)
 
     // Room DB streams
@@ -196,11 +200,43 @@ class MusicRepository(
      *
      * Returns the number of audio files found on the device.
      */
+    // ---------------------------------------------------------------------------------------------
+    // Removing tracks
+    // ---------------------------------------------------------------------------------------------
+
+    private suspend fun hiddenIds(): MutableSet<String> =
+        appDao.getPreference(PREF_HIDDEN)?.split('\n')?.filter { it.isNotBlank() }?.toMutableSet() ?: mutableSetOf()
+
+    /**
+     * Remove songs from the Library (and every mixtape). With [keepHidden], device songs stay
+     * out of the Library on the next scan even though their files still exist.
+     */
+    suspend fun removeFromLibrary(songIds: List<String>, keepHidden: Boolean) = withContext(Dispatchers.IO) {
+        if (songIds.isEmpty()) return@withContext
+        songIds.chunked(500).forEach { chunk ->
+            appDao.removeSongsFromAllPlaylists(chunk)
+            appDao.deleteSongs(chunk)
+        }
+        if (keepHidden) {
+            val hidden = hiddenIds()
+            hidden.addAll(songIds.filter { it.startsWith("local_") })
+            appDao.setPreference(AppPreferenceEntity(PREF_HIDDEN, hidden.joinToString("\n")))
+        }
+    }
+
+    suspend fun hiddenCount(): Int = hiddenIds().size
+
+    /** Let tracks removed with "Remove from Library" come back on the next scan. */
+    suspend fun clearHiddenTracks() = withContext(Dispatchers.IO) {
+        appDao.setPreference(AppPreferenceEntity(PREF_HIDDEN, ""))
+    }
+
     suspend fun scanLocalAudioFiles(): Int = withContext(Dispatchers.IO) {
         // One-time cleanup of stock-photo placeholders that older builds stored as "album art"
         try { appDao.clearStockPhotoArtOnLocalSongs() } catch (_: Exception) {}
 
         val existing = appDao.getAllSongsDirect().associateBy { it.id }
+        val hidden = hiddenIds()
         val merged = mutableListOf<SongEntity>()
         val seenIds = HashSet<String>()
 
@@ -256,6 +292,7 @@ class MusicRepository(
                 val mediaId = it.getLong(idCol)
                 val songId = "local_$mediaId"
                 seenIds.add(songId)
+                if (songId in hidden) continue
 
                 val contentUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, mediaId).toString()
                 val prev = existing[songId]

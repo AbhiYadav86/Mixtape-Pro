@@ -49,7 +49,6 @@ fun CleanUpStudioPanel(
     var song by remember { mutableStateOf(initialSong ?: librarySongs.firstOrNull()) }
     var showPicker by remember { mutableStateOf(false) }
     var settings by remember { mutableStateOf(MainViewModel.CleanSettings()) }
-    var previewFrom by remember(song?.id) { mutableStateOf(0f) }
     val task by viewModel.studioTask.collectAsState()
     val dur = (song?.durationMs ?: 0L).coerceAtLeast(1000L)
 
@@ -60,7 +59,7 @@ fun CleanUpStudioPanel(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-        StudioMonitor(viewModel, skin)
+        StudioMonitor(viewModel, skin, MainViewModel.SECTION_CLEAN, "CLEAN-UP MONITOR")
 
         StudioCard(skin, title = "CLEAN-UP STUDIO", subtitle = "Remove hiss & hum, strip or isolate vocals, or cut out a section", icon = Icons.Default.CleaningServices) {
             SelectedTrackRow(song, skin) { showPicker = true }
@@ -113,14 +112,11 @@ fun CleanUpStudioPanel(
                 }
             }
 
-            StudioCard(skin, title = "Listen & save", icon = Icons.Default.Headphones) {
-                if (settings.tool != MainViewModel.CleanTool.CUT) {
-                    StudioSlider("Preview from", fmtMmSs((previewFrom * dur).toLong()), previewFrom, 0f..0.95f, skin) { previewFrom = it }
-                }
+            StudioCard(skin, title = "Listen & save", subtitle = "Switch between Original and Result — playback stays at the same moment", icon = Icons.Default.Headphones) {
                 StudioButtonPair(
                     skin,
-                    left = Triple("Original", Icons.Default.PlayArrow) { viewModel.previewOriginal(s, if (settings.tool == MainViewModel.CleanTool.CUT) (settings.cutStartMs - 6000).coerceAtLeast(0) else (previewFrom * dur).toLong()) },
-                    right = Triple("Preview result", Icons.Default.Headphones) { viewModel.previewCleanUp(s, settings, (previewFrom * dur).toLong()) },
+                    left = Triple("Original", Icons.Default.PlayArrow) { viewModel.previewOriginal(s, if (settings.tool == MainViewModel.CleanTool.CUT) (settings.cutStartMs - 6000).coerceAtLeast(0) else -1L) },
+                    right = Triple("Preview result", Icons.Default.Headphones) { viewModel.previewCleanUp(s, settings) },
                     enabled = task == null
                 )
                 StudioButton("Save cleaned track", Icons.Default.Save, skin, Modifier.fillMaxWidth(), enabled = !exportState.isRunning && task == null) {
@@ -152,8 +148,8 @@ fun FxMashupPanel(
 ) {
     var tab by rememberSaveableInt(0)
     Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-        StudioMonitor(viewModel, skin)
-        StudioSegmented(options = listOf(0 to "Retro FX", 1 to "Mashup"), selected = tab, skin = skin) { tab = it }
+        StudioMonitor(viewModel, skin, MainViewModel.SECTION_FX, "FX & MASHUP MONITOR")
+        StudioSegmented(options = listOf(0 to "Retro FX", 1 to "Mashup"), selected = tab, skin = skin) { viewModel.stopStudioAudio(); tab = it }
         if (tab == 0) {
             RetroFxSection(viewModel, librarySongs, initialSong, skin, exportState, onPlayExport)
         } else {
@@ -179,9 +175,7 @@ private fun RetroFxSection(
     var showPicker by remember { mutableStateOf(false) }
     var preset by remember { mutableStateOf(StudioDsp.RetroPreset.CASSETTE) }
     var intensity by remember { mutableStateOf(0.8f) }
-    var previewFrom by remember(song?.id) { mutableStateOf(0.25f) }
     val task by viewModel.studioTask.collectAsState()
-    val dur = (song?.durationMs ?: 0L).coerceAtLeast(1000L)
 
     StudioCard(skin, title = "RETRO FX", subtitle = "Time Machine & Remix Lab presets — makes a new version of a song", icon = Icons.Default.AutoFixHigh) {
         SelectedTrackRow(song, skin) { showPicker = true }
@@ -215,12 +209,11 @@ private fun RetroFxSection(
 
     val s = song
     if (s != null) {
-        StudioCard(skin, title = "Listen & save", icon = Icons.Default.Headphones) {
-            StudioSlider("Preview from", fmtMmSs((previewFrom * dur).toLong()), previewFrom, 0f..0.9f, skin) { previewFrom = it }
+        StudioCard(skin, title = "Listen & save", subtitle = "Switch between Original and FX — playback stays at the same moment", icon = Icons.Default.Headphones) {
             StudioButtonPair(
                 skin,
-                left = Triple("Original", Icons.Default.PlayArrow) { viewModel.previewOriginal(s, (previewFrom * dur).toLong()) },
-                right = Triple("Preview FX", Icons.Default.Headphones) { viewModel.previewFx(s, preset, intensity, (previewFrom * dur).toLong()) },
+                left = Triple("Original", Icons.Default.PlayArrow) { viewModel.previewOriginal(s) },
+                right = Triple("Preview FX", Icons.Default.Headphones) { viewModel.previewFx(s, preset, intensity) },
                 enabled = task == null
             )
             StudioButton("Save ${preset.label} version", Icons.Default.Save, skin, Modifier.fillMaxWidth(), enabled = !exportState.isRunning && task == null) {
@@ -288,7 +281,12 @@ private fun MashupSection(
     }
 
     layers.forEachIndexed { index, layer ->
-        MashupLayerCard(index, layer, skin, onUpdate = { viewModel.updateMashupLayer(index, it) }, onRemove = { viewModel.removeMashupLayer(index) })
+        MashupLayerCard(
+            index, layer, skin,
+            onUpdate = { viewModel.updateMashupLayer(index, it) },
+            onRemove = { viewModel.removeMashupLayer(index) },
+            onListen = { viewModel.previewSource(layer.uri, "Layer ${index + 1}: ${layer.title}", layer.durationMs, layer.inMs) }
+        )
     }
 
     if (layers.isNotEmpty()) {
@@ -308,7 +306,7 @@ private fun MashupSection(
             )
             StudioButtonPair(
                 skin,
-                left = Triple("Preview 30 s", Icons.Default.Headphones) { viewModel.previewMashup() },
+                left = Triple("Preview", Icons.Default.Headphones) { viewModel.previewMashup() },
                 right = Triple("Save mashup", Icons.Default.Save) { viewModel.stopStudioAudio(); viewModel.exportMashup(title) },
                 enabled = task == null && !exportState.isRunning && recordingMs == null
             )
@@ -328,7 +326,8 @@ private fun MashupLayerCard(
     layer: StudioJobs.MashupLayer,
     skin: RetroSkin,
     onUpdate: (StudioJobs.MashupLayer) -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    onListen: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(index == 0) }
     val colors = listOf(Color(0xFF00E5FF), Color(0xFFFF4081), Color(0xFFFFB800), Color(0xFFB388FF))
@@ -352,6 +351,9 @@ private fun MashupLayerCard(
                     ).joinToString(" • "),
                     color = StudioSubtle, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
+            }
+            IconButton(onClick = onListen) {
+                Icon(Icons.Default.Headphones, contentDescription = "Listen in the monitor", tint = c)
             }
             IconButton(onClick = { expanded = !expanded }) {
                 Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = "Edit", tint = Color.White)

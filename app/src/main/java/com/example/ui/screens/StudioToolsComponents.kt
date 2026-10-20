@@ -3,7 +3,6 @@ package com.example.ui.screens
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
@@ -246,7 +245,7 @@ fun StudioExportStatusCard(
                     if (song != null) {
                         OutlinedButton(onClick = { onPlay(song) }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(4.dp)) {
                             Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                            Text(" Play", color = Color.White, fontSize = 12.sp)
+                            Text(" Listen", color = Color.White, fontSize = 12.sp)
                         }
                     }
                     if (state.isRingtone) {
@@ -295,33 +294,11 @@ fun RingtoneMakerPanel(
     var fadeOut by remember { mutableStateOf(true) }
     var title by remember(song?.id) { mutableStateOf(song?.let { "${it.title} (Ringtone)" } ?: "") }
 
-    // Preview player
-    var previewPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
-    var previewing by remember { mutableStateOf(false) }
-    val context = LocalContext.current
-    DisposableEffect(Unit) {
-        onDispose {
-            try { previewPlayer?.release() } catch (_: Exception) {}
-        }
-    }
     val startMs = (range.start * durationMs).toLong()
     val endMs = (range.endInclusive * durationMs).toLong()
-    LaunchedEffect(previewing, startMs, endMs) {
-        if (previewing) {
-            while (previewing) {
-                kotlinx.coroutines.delay(200)
-                val p = previewPlayer ?: break
-                val pos = try { p.currentPosition.toLong() } catch (_: Exception) { break }
-                if (pos >= endMs) {
-                    try { p.pause() } catch (_: Exception) {}
-                    previewing = false
-                }
-            }
-        }
-    }
 
     if (viewModel != null) {
-        StudioMonitor(viewModel, skin)
+        StudioMonitor(viewModel, skin, MainViewModel.SECTION_RINGTONE, "RINGTONE MONITOR")
         Spacer(modifier = Modifier.height(10.dp))
     }
     PanelCard(skin, "RINGTONE MAKER", "Cut any song into a ringtone or alert sound", Icons.Default.RingVolume) {
@@ -370,52 +347,21 @@ fun RingtoneMakerPanel(
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                OutlinedButton(
-                    onClick = {
-                        val s = song ?: return@OutlinedButton
-                        if (viewModel != null) {
-                            viewModel.previewRingtone(s, startMs, endMs, if (fadeIn) 600L else 0L, if (fadeOut) 1500L else 0L)
-                            return@OutlinedButton
-                        }
-                        if (previewing) {
-                            try { previewPlayer?.pause() } catch (_: Exception) {}
-                            previewing = false
-                        } else {
-                            onBeforePreview()
-                            try {
-                                previewPlayer?.release()
-                                val mp = MediaPlayer()
-                                mp.setDataSource(context, Uri.parse(s.uri))
-                                mp.prepare()
-                                mp.seekTo(startMs.toInt())
-                                mp.start()
-                                previewPlayer = mp
-                                previewing = true
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "Can't preview this file", Toast.LENGTH_SHORT).show()
-                            }
-                        }
+            if (viewModel != null) {
+                StudioButtonPair(
+                    skin,
+                    left = Triple("Whole song", Icons.Default.PlayArrow) { song?.let { viewModel.previewOriginal(it, startMs) } },
+                    right = Triple("Preview ringtone", Icons.Default.Headphones) {
+                        song?.let { viewModel.previewRingtone(it, startMs, endMs, if (fadeIn) 600L else 0L, if (fadeOut) 1500L else 0L) }
                     },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(if (previewing) Icons.Default.Stop else Icons.Default.PlayArrow, contentDescription = null, tint = Color.White)
-                    Text(if (previewing) " Stop" else " Preview", color = Color.White)
-                }
-                Button(
-                    onClick = {
-                        val s = song ?: return@Button
-                        try { previewPlayer?.pause() } catch (_: Exception) {}
-                        previewing = false
-                        onExport(s, startMs, endMs, if (fadeIn) 600L else 0L, if (fadeOut) 1500L else 0L, title)
-                    },
-                    enabled = !exportState.isRunning,
-                    colors = ButtonDefaults.buttonColors(containerColor = skin.accentColor),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Save, contentDescription = null, tint = Color.Black)
-                    Text(" Save", color = Color.Black, fontWeight = FontWeight.Bold)
-                }
+                    rightPrimary = false
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            StudioButton("Save ringtone", Icons.Default.Save, skin, Modifier.fillMaxWidth(), enabled = !exportState.isRunning) {
+                val s = song ?: return@StudioButton
+                viewModel?.stopStudioAudio()
+                onExport(s, startMs, endMs, if (fadeIn) 600L else 0L, if (fadeOut) 1500L else 0L, title)
             }
         }
         StudioExportStatusCard(exportState, skin, onPlayExport, onDismissExport)

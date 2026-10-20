@@ -1,6 +1,5 @@
 package com.example.ui.screens
 
-import android.media.MediaPlayer
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -104,7 +103,7 @@ fun MixtapeBuilderPanel(
     }
 
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        StudioMonitor(viewModel, skin)
+        StudioMonitor(viewModel, skin, MainViewModel.SECTION_MIX, "MIXTAPE MONITOR")
 
         // ===== AUTO MIX =====
         StudioCard(skin, title = "AUTO MIX", subtitle = "Pick songs and a style — tempo, beats, order and transitions are done for you", icon = Icons.Default.AutoAwesome) {
@@ -137,7 +136,14 @@ fun MixtapeBuilderPanel(
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 StudioButton("Add track", Icons.Default.Add, skin, Modifier.weight(1f)) { showPicker = true }
-                StudioButton("Clear", Icons.Default.DeleteSweep, skin, Modifier.weight(1f), primary = false, enabled = plan.isNotEmpty()) { viewModel.clearMix() }
+                StudioButton("Clear", Icons.Default.DeleteSweep, skin, Modifier.weight(1f), primary = false, enabled = plan.isNotEmpty()) { viewModel.stopStudioAudio(); viewModel.clearMix() }
+            }
+            if (plan.isNotEmpty()) {
+                StudioButton(
+                    if (plan.size == 1) "Preview the track" else "Preview whole mix (${fmtClock(totalMs)})",
+                    Icons.Default.Headphones, skin, Modifier.fillMaxWidth(), primary = false, enabled = task == null
+                ) { viewModel.previewFullMix() }
+                Text("Markers on the monitor's seek bar show where each transition starts.", color = StudioSubtle, fontSize = 12.sp)
             }
         }
 
@@ -153,13 +159,14 @@ fun MixtapeBuilderPanel(
                 onToggleExpand = { expandedKey = if (expandedKey == item.key) null else item.key },
                 onMove = { d -> viewModel.moveInMix(item.key, d) },
                 onRemove = { viewModel.removeFromMix(item.key) },
-                onUpdate = { viewModel.updateMixItem(it) }
+                onUpdate = { viewModel.updateMixItem(it) },
+                onListen = { viewModel.previewOriginal(item.song, item.inMs) }
             )
             if (index < plan.lastIndex) {
                 TransitionCard(
                     item = item,
                     skin = skin,
-                    isRendering = preview.renderingKey == item.key,
+                    isRendering = false,
                     onUpdate = { viewModel.updateMixItem(it) },
                     onPreview = { viewModel.previewTransition(item.key) }
                 )
@@ -340,7 +347,8 @@ private fun MixTrackCard(
     onToggleExpand: () -> Unit,
     onMove: (Int) -> Unit,
     onRemove: () -> Unit,
-    onUpdate: (MainViewModel.MixPlanItem) -> Unit
+    onUpdate: (MainViewModel.MixPlanItem) -> Unit,
+    onListen: () -> Unit
 ) {
     val dur = item.song.durationMs.coerceAtLeast(1000L)
     Column(
@@ -367,6 +375,9 @@ private fun MixTrackCard(
                     listOfNotNull(item.song.artist, bpm?.let { "${it.toInt()} BPM" }, "${fmtClock(item.inMs)}–${fmtClock(item.outMs)}").joinToString(" • "),
                     color = Color(0xFFB4BFCE), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
+            }
+            IconButton(onClick = onListen, modifier = Modifier.size(34.dp)) {
+                Icon(Icons.Default.Headphones, contentDescription = "Listen in the monitor", tint = skin.accentColor)
             }
             IconButton(onClick = { onMove(-1) }, enabled = !isFirst, modifier = Modifier.size(34.dp)) {
                 Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Move up", tint = if (isFirst) Color(0xFF475569) else Color.White)

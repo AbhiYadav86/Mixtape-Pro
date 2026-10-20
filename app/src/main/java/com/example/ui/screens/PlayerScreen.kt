@@ -642,7 +642,12 @@ fun PlayerScreen(
                                 onToggleFavorite = { song -> viewModel.toggleFavorite(song) },
                                 onSyncLocalFolders = { viewModel.syncLocalFolders() },
                                 onImportLocalUris = { uris -> viewModel.importMultipleLocalAudioUris(uris) },
-                                onAddSongToPlaylist = { pid, song -> viewModel.addSongToPlaylist(pid, song) }
+                                onAddSongToPlaylist = { pid, song -> viewModel.addSongToPlaylist(pid, song) },
+                                isShuffle = isShuffle,
+                                onShuffleAll = { list -> viewModel.shuffleAll(list) },
+                                onRemoveFromLibrary = { list -> viewModel.removeSongsFromLibrary(list, deletedFromDevice = false) },
+                                onDeletedFromDevice = { list -> viewModel.removeSongsFromLibrary(list, deletedFromDevice = true) },
+                                onRestoreRemoved = { viewModel.restoreRemovedTracks() }
                             )
                         }
                         2 -> {

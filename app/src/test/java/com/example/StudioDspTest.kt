@@ -5,6 +5,7 @@ import com.example.audio.MixRenderer
 import com.example.audio.OneShotSynth
 import com.example.audio.StudioDsp
 import com.example.audio.StudioJobs
+import com.example.audio.StudioPreviewBuffer
 import com.example.audio.TrackAnalysis
 import com.example.audio.TrackAnalyzer
 import org.junit.Assert.assertEquals
@@ -153,5 +154,50 @@ class StudioDspTest {
         assertEquals(MixRenderer.Transition.BASS_SWAP, plan[0].transition)   // 124 -> 126: close tempos
         assertEquals(MixRenderer.Transition.ECHO_OUT, plan[1].transition)    // 126 -> 90: tempo clash
         assertTrue(plan[1].gain > plan[0].gain)                               // quieter track is turned up
+    }
+
+    @Test fun previewBufferPlaysWhileWritingAndStopsWhenReplaced() {
+        val dir = java.nio.file.Files.createTempDirectory("prev").toFile()
+        val buf = StudioPreviewBuffer.create(dir, 44100)
+        val x = gen(1.0) { i -> (sin(2 * PI * 440 * i / sr) * 0.5).toFloat().let { it to -it } }
+        buf.write(x, 10000)
+        // readable before the render has finished
+        val bytes = ByteArray(4 * 512)
+        assertEquals(512, buf.read(100, bytes, 512))
+        val l = ((bytes[0].toInt() and 0xFF) or (bytes[1].toInt() shl 8)).toShort() / 32767f
+        val r = ((bytes[2].toInt() and 0xFF) or (bytes[3].toInt() shl 8)).toShort() / 32767f
+        assertEquals(x[200], l, 1e-3f)
+        assertEquals(x[201], r, 1e-3f)
+        assertEquals(0, buf.read(10000, bytes, 512))           // nothing past what's written
+        buf.write(x.copyOfRange(20000, x.size), 34100)
+        buf.finish()
+        assertTrue(buf.complete)
+        assertEquals(44100L, buf.framesWritten)
+        val header = buf.file.readBytes().copyOfRange(0, 4).toString(Charsets.US_ASCII)
+        assertEquals("RIFF", header)
+
+        val buf2 = StudioPreviewBuffer.create(dir, 44100)
+        buf2.cancelAndDelete()
+        var threw = false
+        try { buf2.write(x, 100) } catch (e: StudioPreviewBuffer.Cancelled) { threw = true }
+        assertTrue("write after replace must stop the renderer", threw)
+        assertFalse(buf2.file.exists())
+    }
+
+    @Test fun stoppedMixRenderReleasesEveryDecoder() {
+        val released = mutableListOf<String>()
+        class Src(val name: String, val a: FloatArray) : MixRenderer.PcmSource {
+            private val inner = StudioDsp.ArraySource(a)
+            override fun read(out: FloatArray, offsetFrames: Int, maxFrames: Int) = inner.read(out, offsetFrames, maxFrames)
+            override fun release() { released.add(name) }
+        }
+        val tracks = listOf(MixRenderer.MixTrack("a", transitionSeconds = 4f), MixRenderer.MixTrack("b"), MixRenderer.MixTrack("c"))
+        val tone = gen(10.0) { i -> (sin(2 * PI * 220 * i / sr) * 0.5).toFloat().let { it to it } }
+        var frames = 0L
+        try {
+            MixRenderer.render(tracks, { t -> Src(t.uri, tone) }, { _, n -> frames += n; if (frames > 12 * sr) throw IllegalStateException("stop") }, 1L) {}
+        } catch (e: IllegalStateException) {}
+        assertTrue("released $released", released.containsAll(listOf("a", "b")))
+        assertEquals(released.size, released.toSet().size)  // each released once
     }
 }

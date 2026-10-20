@@ -98,29 +98,24 @@ object MixRenderer {
     }
 
     /**
-     * Render a short audition of the transition between [a] and [b]:
+     * The two clipped tracks for a short audition of the transition between [a] and [b]:
      * the last [leadSeconds] of A, the transition, and the first [leadSeconds] of B.
-     * Written as a WAV into the cache dir; returns the file.
+     * Returns the tracks and where (ms into the audition) the transition starts.
      */
-    fun renderTransitionPreview(
-        context: Context,
+    fun transitionPreviewTracks(
         a: MixTrack,
         aDurationMs: Long,
         b: MixTrack,
         leadSeconds: Int = 8
-    ): File {
+    ): Pair<List<MixTrack>, Long> {
         val aEnd = if (a.outMs > 0) a.outMs else aDurationMs
         val tLen = (a.transitionSeconds * 1000).toLong()
         val aStart = (aEnd - tLen - leadSeconds * 1000L).coerceAtLeast(a.inMs)
         val bEnd = b.inMs + tLen + leadSeconds * 1000L
         val previewA = a.copy(inMs = aStart, outMs = aEnd)
         val previewB = b.copy(inMs = b.inMs, outMs = bEnd, transition = Transition.CUT, drop = OneShot.NONE)
-
-        val out = File(context.cacheDir, "mix_preview.wav")
-        StudioRenderEngine.WavFileSink(out).use { sink ->
-            render(listOf(previewA, previewB), decoderFactory(context), { d, n -> sink.write(d, n) }, 1L) {}
-        }
-        return out
+        val marker = (aEnd - aStart - if (a.transition.usesLength) tLen else 0L).coerceAtLeast(0L)
+        return listOf(previewA, previewB) to marker
     }
 
     // =============================================================================================
@@ -146,9 +141,14 @@ object MixRenderer {
 
         var carriedSource: PcmSource? = null // next track's source, already partly consumed by a transition
         val chunk = FloatArray(4096 * 2)
+        // every decoder still open, so they're all released if the render is stopped part-way
+        val open = LinkedHashSet<PcmSource>()
+        fun opened(s: PcmSource): PcmSource { open.add(s); return s }
+        fun rel(s: PcmSource) { if (open.remove(s)) s.release() }
 
+        try {
         for ((index, track) in tracks.withIndex()) {
-            val source = carriedSource ?: sourceFor(track)
+            val source = carriedSource ?: opened(sourceFor(track))
             carriedSource = null
             val isLast = index == tracks.lastIndex
             val tailFrames = if (isLast) 0 else tailFramesFor(track)
@@ -162,19 +162,23 @@ object MixRenderer {
                     if (tailFrames > 0) ring.push(chunk, n, emit) else emit(chunk, n)
                 }
             } finally {
-                if (isLast) source.release()
+                if (isLast) rel(source)
             }
             if (isLast) break
 
             // ---- Transition into the next track ----
-            source.release()
+            rel(source)
             val next = tracks[index + 1]
-            val nextSource = sourceFor(next)
+            val nextSource = opened(sourceFor(next))
             val tail = ring.drain()
             if (track.drop != OneShot.NONE) overlay.add(OneShotSynth.render(track.drop), 0.85f)
             val blended = applyTransition(track, tail, nextSource, next.gain)
             if (blended.isNotEmpty()) emit(blended, blended.size / 2)
             carriedSource = nextSource
+        }
+        } catch (e: Throwable) {
+            open.toList().forEach { s -> try { rel(s) } catch (_: Exception) {} }
+            throw e
         }
         // Let a final one-shot ring out
         val rest = overlay.remainingFrames()
