@@ -139,7 +139,7 @@ object StudioPreviewPlayer {
         val renderComplete: Boolean = false,
         val markers: List<Long> = emptyList(),
         val canSeekAnywhere: Boolean = false,
-        /** Names of the aligned versions you can switch between instantly (e.g. Original / Instrumental / Vocals). */
+        /** Names of the aligned versions you can switch between instantly (e.g. Original / Cleaned). */
         val stems: List<String> = emptyList(),
         val activeStem: Int = 0
     )

@@ -582,7 +582,6 @@ fun DJStudioScreen(
         artUri: String?
     ) -> Unit = { _, _, _, _, _, _, _ -> },
     onExportRingtone: (Song, Long, Long, Long, Long, String) -> Unit = { _, _, _, _, _, _ -> },
-    onExportVocals: (Song, Float, Float, com.example.audio.StudioRenderEngine.OutputFormat) -> Unit = { _, _, _, _ -> },
     onDismissExport: () -> Unit = {},
     mixPlan: List<com.example.ui.viewmodel.MainViewModel.MixPlanItem> = emptyList(),
     mixPreview: com.example.ui.viewmodel.MainViewModel.MixPreviewState = com.example.ui.viewmodel.MainViewModel.MixPreviewState(),
@@ -976,10 +975,10 @@ fun DJStudioScreen(
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // TOP CONSOLE MODE SWITCHER: DJ Mixer • Sound Splicer • Ringtone Maker • Vocal Remover
+        // TOP CONSOLE MODE SWITCHER: Mixtape Builder • Clean-Up • FX & Mashup • Ringtone Maker
         val studioModes = listOf(
             Triple("MIXTAPE BUILDER", "AUTO MIX • TRANSITIONS", Icons.Default.QueueMusic),
-            Triple("CLEAN-UP STUDIO", "NOISE • VOCALS • CUT", Icons.Default.CleaningServices),
+            Triple("CLEAN-UP STUDIO", "NOISE • CUT", Icons.Default.CleaningServices),
             Triple("FX & MASHUP", "RETRO FX • LAYERS", Icons.Default.AutoFixHigh),
             Triple("RINGTONE MAKER", "CUT • FADE • SET", Icons.Default.RingVolume)
         )

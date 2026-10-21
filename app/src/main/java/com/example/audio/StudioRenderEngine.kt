@@ -28,7 +28,7 @@ import kotlin.math.sin
 /**
  * Real offline audio rendering for DJ Studio:
  *  - decodes any audio the phone can play (MP3, AAC, FLAC, OGG, WAV…) with MediaCodec
- *  - trims, splices with crossfades, applies gain / fades / noise gate / vocal removal
+ *  - trims, splices with crossfades, applies gain / fades / noise gate
  *  - writes a real file (WAV master or AAC .m4a) into the phone's Music or Ringtones folder
  *
  * All work is blocking; call it from a background dispatcher.
@@ -188,63 +188,6 @@ object StudioRenderEngine {
                     sink.write(chunk, n)
                     pos += n
                     onProgress((pos.toFloat() / totalFrames).coerceIn(0f, 0.99f))
-                }
-            } finally {
-                source.release()
-            }
-            onProgress(1f)
-        }
-    }
-
-    /**
-     * Karaoke-style vocal remover. Lead vocals are usually mixed dead-centre, so removing the
-     * centre (mid) channel removes most of the voice. Bass and kick drum are also centred, so the
-     * mid channel below ~[bassKeepHz] is kept to avoid a thin, bass-less result.
-     * [strength] 0..1 controls how much of the centre is removed.
-     */
-    fun renderVocalRemoval(
-        context: Context,
-        sourceUri: String,
-        strength: Float,
-        bassKeepHz: Float,
-        title: String,
-        format: OutputFormat = OutputFormat.WAV,
-        onProgress: (Float) -> Unit = {}
-    ): RenderResult {
-        val expected = estimateFrames(context, RenderPart(sourceUri)).coerceAtLeast(1L)
-        val s = strength.coerceIn(0f, 1f)
-        // One-pole low-pass coefficient for the kept bass band
-        val alpha = (1.0 - exp(-2.0 * PI * bassKeepHz / SAMPLE_RATE)).toFloat()
-
-        return writeOutput(context, title, format, Destination.MUSIC) { sink ->
-            val source = DecodedPcmSource(context, Uri.parse(sourceUri), 0L, -1L)
-            try {
-                val chunk = FloatArray(4096 * CHANNELS)
-                var lp = 0f
-                var done = 0L
-                var monoWarned = false
-                while (true) {
-                    val n = source.read(chunk, 0, chunk.size / CHANNELS)
-                    if (n <= 0) break
-                    if (source.sourceChannels < 2 && !monoWarned) {
-                        Log.w(TAG, "Mono source: vocal removal cannot separate the centre channel")
-                        monoWarned = true
-                    }
-                    for (f in 0 until n) {
-                        val l = chunk[f * 2]
-                        val r = chunk[f * 2 + 1]
-                        val mid = (l + r) * 0.5f
-                        val side = (l - r) * 0.5f
-                        lp += alpha * (mid - lp)
-                        val keptMid = lp + (1f - s) * (mid - lp)
-                        // Side carries the stereo instruments; boost slightly to compensate loudness
-                        val sideGain = 1f + 0.4f * s
-                        chunk[f * 2] = keptMid + side * sideGain
-                        chunk[f * 2 + 1] = keptMid - side * sideGain
-                    }
-                    sink.write(chunk, n)
-                    done += n
-                    onProgress((done.toFloat() / expected).coerceIn(0f, 0.99f))
                 }
             } finally {
                 source.release()

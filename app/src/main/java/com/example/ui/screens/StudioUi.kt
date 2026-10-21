@@ -310,7 +310,7 @@ fun StudioMonitor(
             }
         }
 
-        // ---- versions of the same audio (e.g. Original / Instrumental / Vocals): switch instantly
+        // ---- versions of the same audio (e.g. Original / Cleaned): switch instantly
         if (state.stems.size > 1) {
             StudioSegmented(
                 options = state.stems.mapIndexed { i, name -> i to name },

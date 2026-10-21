@@ -14,7 +14,7 @@ import kotlin.math.tanh
 /**
  * Streaming DSP building blocks for DJ Studio. Every processor is a [MixRenderer.PcmSource]
  * that wraps another source (interleaved stereo float, 44.1 kHz), so they can be chained:
- *   Decoder -> TimeStretch -> Spectral (noise / vocals) -> RetroFx -> output
+ *   Decoder -> TimeStretch -> Spectral (noise) -> RetroFx -> output
  * None of them hold more than a few thousand frames in memory.
  */
 object StudioDsp {
@@ -537,54 +537,6 @@ object StudioDsp {
     // =============================================================================================
     // Vocal remover / isolator (frequency-domain centre extraction)
     // =============================================================================================
-
-    enum class VocalMode { INSTRUMENTAL, VOCALS_ONLY }
-
-    /**
-     * For each frequency bin, measures how identical L and R are (lead vocals are usually mixed
-     * dead-centre and mono). Only coherent, centred energy inside the vocal band is removed (or kept).
-     * Bass and kick below [lowHz] and cymbals above [highHz] are left alone.
-     */
-    class VocalSeparator(
-        private val mode: VocalMode,
-        private val strength: Float,
-        lowHz: Double = 140.0,
-        highHz: Double = 9000.0,
-        n: Int = 2048
-    ) : SpectralFrame {
-        private val bins = n / 2 + 1
-        private val bandWeight = DoubleArray(bins) { k ->
-            val f = k.toDouble() * SR / n
-            val lo = ((f - lowHz * 0.7) / (lowHz * 0.6)).coerceIn(0.0, 1.0)
-            val hi = ((highHz * 1.3 - f) / (highHz * 0.6)).coerceIn(0.0, 1.0)
-            lo * hi
-        }
-        private val prevW = DoubleArray(bins)
-
-        override fun process(lRe: DoubleArray, lIm: DoubleArray, rRe: DoubleArray, rIm: DoubleArray) {
-            for (k in 0 until bins) {
-                val dRe = lRe[k] - rRe[k]; val dIm = lIm[k] - rIm[k]
-                val lMag = sqrt(lRe[k] * lRe[k] + lIm[k] * lIm[k])
-                val rMag = sqrt(rRe[k] * rRe[k] + rIm[k] * rIm[k])
-                val diff = sqrt(dRe * dRe + dIm * dIm)
-                var w = (1.0 - diff / (lMag + rMag + 1e-9)).coerceIn(0.0, 1.0)
-                w = w * w * w                                  // only strongly centred content
-                w = 0.6 * prevW[k] + 0.4 * w                   // smooth over time
-                prevW[k] = w
-                val m = w * bandWeight[k] * strength
-                val cRe = (lRe[k] + rRe[k]) * 0.5 * m
-                val cIm = (lIm[k] + rIm[k]) * 0.5 * m
-                when (mode) {
-                    VocalMode.INSTRUMENTAL -> {
-                        lRe[k] -= cRe; lIm[k] -= cIm; rRe[k] -= cRe; rIm[k] -= cIm
-                    }
-                    VocalMode.VOCALS_ONLY -> {
-                        lRe[k] = cRe; lIm[k] = cIm; rRe[k] = cRe; rIm[k] = cIm
-                    }
-                }
-            }
-        }
-    }
 
     // =============================================================================================
     // Retro FX ("Time Machine" + "Remix Lab")

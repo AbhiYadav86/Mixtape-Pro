@@ -60,15 +60,9 @@ object StudioJobs {
         if (done == 0L && sinks.none { it.cancelled }) throw StudioRenderEngine.RenderException("Nothing to preview — the audio couldn't be decoded.")
     }
 
-    /** Original + cleaned (noise) or original + instrumental + vocals, in one pass. */
+    /** Original + cleaned (noise removed), rendered in one pass so they stay aligned. */
     fun noiseStems(context: Context, uri: String, profile: StudioDsp.NoiseProfile, strength: Float, inMs: Long) =
         StudioDsp.MultiStft(decoder(context, uri, inMs, -1L), listOf(null, StudioDsp.NoiseReducer(profile, strength)))
-
-    fun vocalStems(context: Context, uri: String, strength: Float, inMs: Long) =
-        StudioDsp.MultiStft(
-            decoder(context, uri, inMs, -1L),
-            listOf(null, StudioDsp.VocalSeparator(StudioDsp.VocalMode.INSTRUMENTAL, strength), StudioDsp.VocalSeparator(StudioDsp.VocalMode.VOCALS_ONLY, strength))
-        )
 
     /** Render a whole source into shared storage. */
     fun renderFull(
@@ -113,9 +107,6 @@ object StudioJobs {
         return try { StudioDsp.learnNoiseProfile(src) } finally { src.release() }
     }
 
-    fun vocalSource(context: Context, uri: String, mode: StudioDsp.VocalMode, strength: Float, inMs: Long = 0L, outMs: Long = -1L) =
-        StudioDsp.StftSource(decoder(context, uri, inMs, outMs), StudioDsp.VocalSeparator(mode, strength))
-
     /** Remove [cutStartMs, cutEndMs] from a track with a short crossfade over the join. */
     fun cutSectionParts(uri: String, cutStartMs: Long, cutEndMs: Long): List<StudioRenderEngine.RenderPart> = listOfNotNull(
         if (cutStartMs > 200) StudioRenderEngine.RenderPart(uri, 0L, cutStartMs) else null,
@@ -134,7 +125,6 @@ object StudioJobs {
     // =============================================================================================
 
     enum class LayerRole { MUSIC, VOICE }
-    enum class LayerExtract(val label: String) { FULL("Full"), INSTRUMENTAL("No vocals"), VOCALS("Vocals only") }
 
     data class MashupLayer(
         val uri: String,
@@ -148,7 +138,6 @@ object StudioJobs {
         val fadeIn: Boolean = true,
         val fadeOut: Boolean = true,
         val role: LayerRole = LayerRole.MUSIC,
-        val extract: LayerExtract = LayerExtract.FULL,
         val tempo: Double = 1.0        // filled in by tempo matching
     ) {
         val playMs: Long get() = ((if (outMs > 0) outMs else durationMs) - inMs).coerceAtLeast(0L)
@@ -205,11 +194,6 @@ object StudioJobs {
     fun mashupSource(context: Context, layers: List<MashupLayer>, autoDuck: Boolean, duckAmount: Float): MixRenderer.PcmSource {
         val built = layers.map { l ->
             var src: MixRenderer.PcmSource = decoder(context, l.uri, l.inMs, l.outMs)
-            when (l.extract) {
-                LayerExtract.INSTRUMENTAL -> src = StudioDsp.StftSource(src, StudioDsp.VocalSeparator(StudioDsp.VocalMode.INSTRUMENTAL, 1f))
-                LayerExtract.VOCALS -> src = StudioDsp.StftSource(src, StudioDsp.VocalSeparator(StudioDsp.VocalMode.VOCALS_ONLY, 1f))
-                LayerExtract.FULL -> {}
-            }
             if (abs(l.tempo - 1.0) > 0.003) src = StudioDsp.TimeStretchSource(src, l.tempo)
             val playFrames = (l.playMs / l.tempo).roundToLong() * SR / 1000L
             src = StudioDsp.GainPanSource(

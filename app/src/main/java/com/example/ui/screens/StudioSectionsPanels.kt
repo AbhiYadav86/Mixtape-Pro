@@ -56,7 +56,7 @@ fun CleanUpStudioPanel(
     val liveStem = song?.let { if (monitor.loaded && viewModel.isCleanPreviewLoaded(it, settings)) monitor.activeStem else null }
 
     // Moving a strength slider while listening re-renders from the same moment (no Preview tap)
-    LaunchedEffect(settings.noiseStrength, settings.vocalStrength) {
+    LaunchedEffect(settings.noiseStrength) {
         kotlinx.coroutines.delay(450)
         song?.let { if (settings.tool != MainViewModel.CleanTool.CUT) viewModel.refreshCleanUpPreview(it, settings) }
     }
@@ -70,12 +70,11 @@ fun CleanUpStudioPanel(
     Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
         StudioMonitor(viewModel, skin, MainViewModel.SECTION_CLEAN, "CLEAN-UP MONITOR")
 
-        StudioCard(skin, title = "CLEAN-UP STUDIO", subtitle = "Remove hiss & hum, strip or isolate vocals, or cut out a section", icon = Icons.Default.CleaningServices) {
+        StudioCard(skin, title = "CLEAN-UP STUDIO", subtitle = "Remove hiss & hum, or cut out a section", icon = Icons.Default.CleaningServices) {
             SelectedTrackRow(song, skin) { showPicker = true }
             StudioSegmented(
                 options = listOf(
                     MainViewModel.CleanTool.NOISE to "Noise",
-                    MainViewModel.CleanTool.VOCALS to "Vocals",
                     MainViewModel.CleanTool.CUT to "Cut"
                 ),
                 selected = settings.tool,
@@ -97,25 +96,6 @@ fun CleanUpStudioPanel(
                         settings = settings.copy(noiseStrength = it)
                     }
                     Text("Tip: start around 50–60 %. Very high settings can sound watery.", color = StudioSubtle, fontSize = 12.sp)
-                }
-                MainViewModel.CleanTool.VOCALS -> StudioCard(skin, title = "Vocal Remover", subtitle = "Separates sound mixed in the centre (usually the lead vocal) per frequency", icon = Icons.Default.MicOff) {
-                    Text("Tap to listen — switches instantly at the same moment", color = StudioSubtle, fontSize = 12.sp)
-                    StudioSegmented(
-                        options = listOf(0 to "Original", 1 to "Instrumental", 2 to "Vocals"),
-                        selected = liveStem ?: viewModel.vocalStemIndex(settings.vocalMode),
-                        skin = skin
-                    ) { i ->
-                        if (i == 1) settings = settings.copy(vocalMode = StudioDsp.VocalMode.INSTRUMENTAL)
-                        if (i == 2) settings = settings.copy(vocalMode = StudioDsp.VocalMode.VOCALS_ONLY)
-                        viewModel.listenCleanUp(s, settings, i)
-                    }
-                    StudioSlider("Strength", "${(settings.vocalStrength * 100).toInt()}%", settings.vocalStrength, 0.3f..1f, skin) {
-                        settings = settings.copy(vocalStrength = it)
-                    }
-                    Text(
-                        "Bass and drums below 140 Hz are kept. Reverb and backing vocals can leave a faint trace; mono recordings can't be separated.",
-                        color = StudioSubtle, fontSize = 12.sp
-                    )
                 }
                 MainViewModel.CleanTool.CUT -> StudioCard(skin, title = "Cut a Section", subtitle = "Remove the highlighted part; the two sides are joined with a tiny crossfade", icon = Icons.Default.ContentCut) {
                     Row(modifier = Modifier.fillMaxWidth()) {
@@ -144,7 +124,6 @@ fun CleanUpStudioPanel(
                 )
                 val saveLabel = when (settings.tool) {
                     MainViewModel.CleanTool.NOISE -> "Save cleaned track"
-                    MainViewModel.CleanTool.VOCALS -> if (settings.vocalMode == StudioDsp.VocalMode.INSTRUMENTAL) "Save instrumental" else "Save vocals only"
                     MainViewModel.CleanTool.CUT -> "Save edited track"
                 }
                 StudioButton(saveLabel, Icons.Default.Save, skin, Modifier.fillMaxWidth(), enabled = !exportState.isRunning && task == null) {
@@ -304,7 +283,7 @@ private fun MashupSection(
             Text("Recording… use headphones so the mic doesn't pick up the music", color = StudioSubtle, fontSize = 12.sp)
         }
         if (layers.isEmpty()) {
-            Text("Layer 1 sets the tempo. Add a beat, an instrumental, a vocal or record your own voice-over.", color = StudioSubtle, fontSize = 12.sp)
+            Text("Layer 1 sets the tempo. Add a beat, another song, or record your own voice-over.", color = StudioSubtle, fontSize = 12.sp)
         }
     }
 
@@ -374,8 +353,7 @@ private fun MashupLayerCard(
                     listOfNotNull(
                         if (layer.role == StudioJobs.LayerRole.VOICE) "Voice" else "Music",
                         "starts ${fmtMmSs(layer.offsetMs)}",
-                        if (layer.tempo != 1.0) "tempo ×${String.format("%.2f", layer.tempo)}" else null,
-                        if (layer.extract != StudioJobs.LayerExtract.FULL) layer.extract.label else null
+                        if (layer.tempo != 1.0) "tempo ×${String.format("%.2f", layer.tempo)}" else null
                     ).joinToString(" • "),
                     color = StudioSubtle, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
@@ -395,10 +373,6 @@ private fun MashupLayerCard(
                 options = listOf(StudioJobs.LayerRole.MUSIC to "Music", StudioJobs.LayerRole.VOICE to "Voice"),
                 selected = layer.role, skin = skin
             ) { onUpdate(layer.copy(role = it)) }
-            StudioChipGrid(
-                options = StudioJobs.LayerExtract.values().map { it to it.label },
-                selected = layer.extract, skin = skin, columns = 3
-            ) { onUpdate(layer.copy(extract = it)) }
             StudioSlider("Starts at", fmtMmSs(layer.offsetMs), layer.offsetMs / 1000f, 0f..180f, skin) {
                 onUpdate(layer.copy(offsetMs = (it * 1000).toLong()))
             }

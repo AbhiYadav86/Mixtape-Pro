@@ -736,9 +736,6 @@ fun PlayerScreen(
                                 onExportRingtone = { song, start, end, fadeIn, fadeOut, title ->
                                     viewModel.exportRingtone(song, start, end, fadeIn, fadeOut, title)
                                 },
-                                onExportVocals = { song, strength, bass, format ->
-                                    viewModel.exportVocalRemoved(song, strength, bass, format)
-                                },
                                 onDismissExport = { viewModel.clearStudioExportMessage() },
                                 mixPlan = mixPlan,
                                 mixPreview = mixPreview,

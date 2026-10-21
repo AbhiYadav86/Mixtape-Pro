@@ -824,14 +824,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun exportVocalRemoved(song: Song, strength: Float, bassKeepHz: Float, format: StudioRenderEngine.OutputFormat) {
-        val context = getApplication<Application>()
-        val finalTitle = "${song.title} (Instrumental)"
-        runStudioRender("Removing vocals", finalTitle, song.artist, song.albumArtUri, "DJ Studio Mixtapes", isRingtone = false) { progress ->
-            StudioRenderEngine.renderVocalRemoval(context, song.uri, strength, bassKeepHz, finalTitle, format, progress)
-        }
-    }
-
     // =============================================================================================
     // MIXTAPE BUILDER (DJ Studio) — ordered tracks + transitions, rendered to one file
     // =============================================================================================
@@ -1162,13 +1154,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // CLEAN-UP STUDIO
     // =============================================================================================
 
-    enum class CleanTool { NOISE, VOCALS, CUT }
+    enum class CleanTool { NOISE, CUT }
 
     data class CleanSettings(
         val tool: CleanTool = CleanTool.NOISE,
         val noiseStrength: Float = 0.6f,
-        val vocalMode: com.example.audio.StudioDsp.VocalMode = com.example.audio.StudioDsp.VocalMode.INSTRUMENTAL,
-        val vocalStrength: Float = 1f,
         val cutStartMs: Long = 0L,
         val cutEndMs: Long = 0L
     )
@@ -1188,7 +1178,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val context = getApplication<Application>()
         return when (s.tool) {
             CleanTool.NOISE -> com.example.audio.StudioJobs.noiseRemovalSource(context, song.uri, profile!!, s.noiseStrength, inMs, outMs)
-            CleanTool.VOCALS -> com.example.audio.StudioJobs.vocalSource(context, song.uri, s.vocalMode, s.vocalStrength, inMs, outMs)
             CleanTool.CUT -> com.example.audio.MixRenderer.decoderFactory(context)(com.example.audio.MixRenderer.MixTrack(song.uri, inMs, outMs))
         }
     }
@@ -1211,18 +1200,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     (s.cutStartMs - 6000).coerceAtLeast(0L)
                 )
             }
-            CleanTool.VOCALS, CleanTool.NOISE -> listenCleanUp(song, s, if (s.tool == CleanTool.VOCALS) vocalStemIndex(s.vocalMode) else 1)
+            CleanTool.NOISE -> listenCleanUp(song, s, 1)
         }
     }
 
-    // Stems of the Clean-Up preview: 0 = Original, then the processed version(s)
-    fun vocalStemIndex(mode: com.example.audio.StudioDsp.VocalMode) = if (mode == com.example.audio.StudioDsp.VocalMode.INSTRUMENTAL) 1 else 2
+    // Stems of the Clean-Up preview: 0 = Original, 1 = Cleaned
 
     /** What the loaded Clean-Up preview was rendered with (song + tool + strength). */
     private var cleanPreviewKey: String? = null
 
     private fun cleanKey(song: Song, s: CleanSettings) = when (s.tool) {
-        CleanTool.VOCALS -> "${song.uri}|V|${s.vocalStrength}"
         CleanTool.NOISE -> "${song.uri}|N|${s.noiseStrength}"
         CleanTool.CUT -> "${song.uri}|C"
     }
@@ -1234,7 +1221,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Listen to one version — 0 Original, 1 Instrumental / Cleaned, 2 Vocals only. If those
+     * Listen to one version — 0 Original, 1 Cleaned. If those
      * stems are already playing it switches instantly at the same moment; otherwise it renders
      * all versions together (from the current position) so later switches are instant.
      */
@@ -1248,19 +1235,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val dur = song.durationMs.coerceAtLeast(1000L)
         val from = continuePosition(song.uri, 1.0)
         val key = cleanKey(song, s)
-        if (s.tool == CleanTool.VOCALS) {
-            cleanPreviewKey = key
-            startPreview(
-                PreviewSpec(
-                    label = song.title, durationMs = dur, sourceKey = song.uri, seekable = true,
-                    stems = listOf("Original", "Instrumental", "Vocals only")
-                ) { f, sinks ->
-                    com.example.audio.StudioJobs.streamStemsInto(com.example.audio.StudioJobs.vocalStems(context, song.uri, s.vocalStrength, f), sinks)
-                },
-                from, autoPlay, stem
-            )
-            return
-        }
         val spec = { profile: com.example.audio.StudioDsp.NoiseProfile ->
             PreviewSpec(
                 label = song.title, durationMs = dur, sourceKey = song.uri, seekable = true,
@@ -1301,7 +1275,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val context = getApplication<Application>()
         val suffix = when (s.tool) {
             CleanTool.NOISE -> "Clean"
-            CleanTool.VOCALS -> if (s.vocalMode == com.example.audio.StudioDsp.VocalMode.INSTRUMENTAL) "Instrumental" else "Vocals"
             CleanTool.CUT -> "Edit"
         }
         val title = "${song.title} ($suffix)"
