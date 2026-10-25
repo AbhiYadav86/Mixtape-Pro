@@ -83,7 +83,7 @@ object RetroSkinsExtra {
         id = "dreamcast_swirl",
         name = "Swirl White '99",
         era = "1999",
-        description = "Clean white shell with the iconic orange swirl and VMU-style LCD.",
+        description = "Clean white shell with the iconic orange swirl and a tiny memory-card LCD.",
         chassis = listOf(Color(0xFFF5F5F4), Color(0xFFE7E5E4), Color(0xFFD6D3D1)),
         border = Color(0xFFF97316),
         lcdBackground = Color(0xFF1C2A1C),
@@ -99,7 +99,7 @@ object RetroSkinsExtra {
 
     val NOKIA_BRICK = skin(
         id = "nokia_brick",
-        name = "Snake Phone 3310",
+        name = "Snake Phone '00",
         era = "2000",
         description = "Indestructible navy brick phone with a backlit green monochrome screen.",
         chassis = listOf(Color(0xFF1E3A5F), Color(0xFF172E4D), Color(0xFF0F1F36)),
@@ -134,7 +134,7 @@ object RetroSkinsExtra {
 
     val XBOX_DUKE = skin(
         id = "xbox_duke",
-        name = "Green Jewel Duke '01",
+        name = "Green Jewel Console '01",
         era = "2001",
         description = "Hulking black console with a glowing green jewel and chunky controller vibes.",
         chassis = listOf(Color(0xFF111312), Color(0xFF0A0C0B), Color(0xFF050605)),
@@ -150,9 +150,9 @@ object RetroSkinsExtra {
 
     val XP_LUNA = skin(
         id = "xp_luna",
-        name = "Luna Blue Desktop '01",
+        name = "Rolling Hills Desktop '01",
         era = "2001",
-        description = "Glossy blue taskbar, green Start button and rolling-hills optimism.",
+        description = "Glossy blue taskbar, green launch button and rolling-hills optimism.",
         chassis = listOf(Color(0xFF2563EB), Color(0xFF1D4ED8), Color(0xFF1E40AF)),
         border = Color(0xFF60A5FA),
         lcdBackground = Color(0xFF0B1B3F),
@@ -168,7 +168,7 @@ object RetroSkinsExtra {
 
     val ZIP_DRIVE = skin(
         id = "zip_drive_blue",
-        name = "Zip Disk 100MB",
+        name = "Click Disk 100MB",
         era = "1995",
         description = "Smurf-blue removable drive with translucent purple disk window.",
         chassis = listOf(Color(0xFF1E3A8A), Color(0xFF1E40AF), Color(0xFF312E81)),

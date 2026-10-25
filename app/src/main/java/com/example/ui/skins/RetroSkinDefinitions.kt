@@ -50,7 +50,7 @@ object RetroSkinDefinitions {
     // 2. Translucent Bondi Aqua
     val IMAC_BONDI = RetroSkin(
         id = "imac_bondi",
-        name = "Aqua Bubble G3",
+        name = "Aqua Bubble '98",
         era = "1998",
         description = "Translucent aqua casing with frosted curves and luminous aqua glow.",
         chassisBackground = Brush.radialGradient(
@@ -132,7 +132,7 @@ object RetroSkinDefinitions {
     // 4. Anti-Shock Disc Player
     val DISCMAN_ESP = RetroSkin(
         id = "discman_esp",
-        name = "Discman ESP",
+        name = "Skip-Free CD '96",
         era = "1997",
         description = "Circular brushed metallic silver finish, holographic disc shimmer, and crisp LCD segments.",
         chassisBackground = Brush.linearGradient(
@@ -335,7 +335,7 @@ object RetroSkinDefinitions {
     // 9. 8-Bit Dot Matrix Portable (1989/90s)
     val GAMEBOY_DMG = RetroSkin(
         id = "gameboy_dmg",
-        name = "8-Bit Handheld DMG",
+        name = "8-Bit Handheld '89",
         era = "1989/90s",
         description = "Dot-matrix olive LCD screen, pebble-gray chassis, and iconic dark magenta A/B buttons.",
         chassisBackground = Brush.linearGradient(
@@ -415,7 +415,7 @@ object RetroSkinDefinitions {
     // 11. Magneto-Optical Disc Sonic Blue
     val MINIDISC_SONIC = RetroSkin(
         id = "minidisc_sonic",
-        name = "Sonic Disc MZ-50",
+        name = "Sonic Disc '99",
         era = "1998",
         description = "Cobalt blue magnesium alloy shell, amber optical sub-display, and sleek jog dial.",
         chassisBackground = Brush.linearGradient(
@@ -537,7 +537,7 @@ object RetroSkinDefinitions {
     // 14. Glossy Piano Obsidian Crystal
     val PSP_PIANO_BLACK = RetroSkin(
         id = "psp_piano_black",
-        name = "XMB Obsidian Glass",
+        name = "Obsidian Glass Menu",
         era = "2004",
         description = "Glossy piano black obsidian finish with smooth wave ribbons and crystal glass buttons.",
         chassisBackground = Brush.verticalGradient(
@@ -820,7 +820,7 @@ object RetroSkinDefinitions {
     // 21. Grape Translucent Purple G3
     val GRAPE_IMAC = RetroSkin(
         id = "grape_imac",
-        name = "Grape Amethyst G3",
+        name = "Grape Amethyst '99",
         era = "1999",
         description = "Juicy translucent deep amethyst purple casing with glowing white optical controls.",
         chassisBackground = Brush.radialGradient(
@@ -1065,7 +1065,7 @@ object RetroSkinDefinitions {
         id = "ps1_classic",
         name = "32-Bit Disc Slate 94",
         era = "1994",
-        description = "Authentic matte industrial grey CD chassis with iconic green triangle, red circle, and blue cross hues.",
+        description = "Authentic matte industrial grey CD chassis with bold green, red and blue button hues.",
         chassisBackground = Brush.verticalGradient(
             listOf(Color(0xFFB5B5B5), Color(0xFF9E9E9E), Color(0xFF888888))
         ),
@@ -1103,9 +1103,9 @@ object RetroSkinDefinitions {
     // 28. 64-Bit Emerald Funtastic (1999)
     val N64_JUNGLE = RetroSkin(
         id = "n64_jungle",
-        name = "Emerald 64 Funtastic",
+        name = "Emerald 64 Jungle",
         era = "1999",
-        description = "Funtastic translucent emerald casing with glowing circuit textures and bright yellow jewel controls.",
+        description = "Translucent emerald casing with glowing circuit textures and bright yellow jewel controls.",
         chassisBackground = Brush.radialGradient(
             listOf(Color(0xFF15803D), Color(0xFF166534), Color(0xFF052E16))
         ),
@@ -1225,7 +1225,7 @@ object RetroSkinDefinitions {
     // 31. Direct Drive Vinyl Deck SL-12 (1991)
     val SL1200_TURNTABLE = RetroSkin(
         id = "sl1200_turntable",
-        name = "Direct Drive SL-12 Deck",
+        name = "Direct Drive Deck",
         era = "1991",
         description = "Die-cast brushed aluminium alloy turntable platter, strobe red LED target lamp & pitch fader.",
         chassisBackground = Brush.linearGradient(
@@ -1346,7 +1346,7 @@ object RetroSkinDefinitions {
     // 34. Cyber Rig Predator Xenon (2002)
     val ALIENWARE_PREDATOR = RetroSkin(
         id = "alienware_predator",
-        name = "Cyber Rig Area-51",
+        name = "Cyber Rig '01",
         era = "2002",
         description = "Futuristic liquid mercury titanium chassis with glowing alien cyan radiator vents and neon visor.",
         chassisBackground = Brush.linearGradient(
@@ -1427,7 +1427,7 @@ object RetroSkinDefinitions {
     // 36. Executive PDA Stylus (2001)
     val PALM_CLIE = RetroSkin(
         id = "palm_clie",
-        name = "Executive Palm PDA",
+        name = "Executive Pocket PDA",
         era = "2001",
         description = "High-end brushed magnesium PDA casing with amber monochrome high-res display and jog dial.",
         chassisBackground = Brush.verticalGradient(
@@ -1468,7 +1468,7 @@ object RetroSkinDefinitions {
     // 37. Key Lime Citrus G3 (1999)
     val LIME_IMAC = RetroSkin(
         id = "lime_imac",
-        name = "Citrus Lime G3",
+        name = "Citrus Lime '99",
         era = "1999",
         description = "Translucent key lime candy housing with vivid neon citrus curves and frosted glow.",
         chassisBackground = Brush.radialGradient(
@@ -1509,7 +1509,7 @@ object RetroSkinDefinitions {
     // 38. Translucent Ruby Candy G3 (1999)
     val RUBY_IMAC = RetroSkin(
         id = "ruby_imac",
-        name = "Ruby Candy G3",
+        name = "Ruby Candy '99",
         era = "1999",
         description = "Translucent deep ruby jewel casing with crimson candy curves and luminous white highlights.",
         chassisBackground = Brush.radialGradient(
@@ -1590,7 +1590,7 @@ object RetroSkinDefinitions {
     // 40. Pro Audio Studio Monitor (1993)
     val STUDIO_MDR = RetroSkin(
         id = "studio_mdr",
-        name = "Studio MDR Monitor",
+        name = "Studio Reference Monitor",
         era = "1993",
         description = "Professional broadcast audio monitor styling in studio textured black, red/gold stereo decals.",
         chassisBackground = Brush.verticalGradient(

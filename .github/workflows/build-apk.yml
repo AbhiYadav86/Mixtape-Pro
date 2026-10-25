@@ -36,6 +36,26 @@ jobs:
           set -o pipefail
           gradle :app:assembleDebug --no-daemon --console=plain 2>&1 | tee build.log
 
+      - name: Build Play Store bundle (.aab, shrunk)
+        id: bundle
+        env:
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          set -o pipefail
+          if [ -n "$UPLOAD_KEYSTORE_BASE64" ]; then
+            echo "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+            export KEYSTORE_PATH="$RUNNER_TEMP/upload.jks"
+            echo "signed=yes" >> "$GITHUB_OUTPUT"
+          else
+            unset STORE_PASSWORD KEY_PASSWORD
+            echo "signed=no" >> "$GITHUB_OUTPUT"
+          fi
+          gradle :app:bundleRelease --no-daemon --console=plain 2>&1 | tee -a build.log
+          rm -f "$RUNNER_TEMP/upload.jks"
+
       - name: Audio DSP unit tests
         id: dsptest
         run: |
@@ -80,9 +100,11 @@ jobs:
         run: |
           VERSION="3.0.${GITHUB_RUN_NUMBER}"
           cp app/build/outputs/apk/debug/app-debug.apk "MixtapePro-v${VERSION}.apk"
+          if [ "${{ steps.bundle.outputs.signed }}" = "yes" ]; then AAB="MixtapePro-v${VERSION}-playstore.aab"; else AAB="MixtapePro-v${VERSION}-playstore-UNSIGNED.aab"; fi
+          cp app/build/outputs/bundle/release/app-release.aab "$AAB"
           NOTES=$(git log -1 --pretty=format:'%s%n%n%b' | grep -v -E '^(Co-Authored-By|Claude-Session):')
           # 1) A permanent, numbered release for this exact build (never overwritten)
-          gh release create "v${VERSION}" "MixtapePro-v${VERSION}.apk" \
+          gh release create "v${VERSION}" "MixtapePro-v${VERSION}.apk" "$AAB" \
             --target "${GITHUB_SHA}" \
             --title "Mixtape Pro v${VERSION}" \
             --notes "${NOTES}" || true

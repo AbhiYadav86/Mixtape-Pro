@@ -196,7 +196,7 @@ fun SkinSelectorDialog(
                         Box(modifier = Modifier.weight(1f)) {
                             if (searchQuery.isEmpty()) {
                                 Text(
-                                    text = "Search ${RetroSkinDefinitions.ALL_SKINS.size} skins (Winamp, PS2, iMac…)",
+                                    text = "Search ${RetroSkinDefinitions.ALL_SKINS.size} skins (cassette, CD, neon…)",
                                     color = Color(0xFF94A3B8),
                                     maxLines = 1,
                                     fontSize = 13.sp,

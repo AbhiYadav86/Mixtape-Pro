@@ -19,3 +19,10 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# --- Mixtape Pro ---
+# Enum names are saved (settings, database) and read back with valueOf, so keep them intact
+-keepclassmembers enum com.example.** { *; }
+# Keep line numbers so Play Console crash reports point at the right code
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
