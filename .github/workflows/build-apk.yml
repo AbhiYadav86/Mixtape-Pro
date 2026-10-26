@@ -67,7 +67,7 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          gradle :app:testDebugUnitTest --tests "com.example.UiScreensTest" --no-daemon --console=plain 2>&1 | tee ui-test.log
+          gradle :app:testDebugUnitTest --tests "com.example.UiScreensTest" -Proborazzi.test.record=true --no-daemon --console=plain 2>&1 | tee ui-test.log
 
       - name: Publish screenshots to ci-logs branch
         if: always()

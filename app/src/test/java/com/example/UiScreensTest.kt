@@ -49,11 +49,13 @@ class UiScreensTest {
     private val dir = "build/ui-shots"
 
     private fun show(content: @Composable () -> Unit) {
+        // Some screens run endless animations (blinking LEDs); step the clock by hand instead
+        compose.mainClock.autoAdvance = false
         compose.setContent {
             val d = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(d.density, fontScale = 1.3f)) { content() }
         }
-        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(1_500L)
     }
 
     private fun song(i: Int, title: String, artist: String, genre: String = "Eurodance") =
