@@ -208,7 +208,7 @@ private fun RenderAlbumImage(song: Song?, onArtworkMissing: (Song) -> Unit = {})
     } else if (com.example.data.model.BuiltInArt.songArt(song?.albumArtRes)?.let { it != com.example.R.drawable.img_cd_jewel_case } == true) {
         Image(
             painter = painterResource(id = com.example.data.model.BuiltInArt.songArt(song?.albumArtRes)!!),
-            contentDescription = song.title,
+            contentDescription = song?.title,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
