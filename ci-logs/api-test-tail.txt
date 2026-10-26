@@ -1,0 +1,150 @@
+154            </intent-filter>
+155        </receiver>
+156    </application>
+157
+158</manifest>
+
+Merged manifest saved to /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/intermediates/packaged_manifests/debugUnitTest/processDebugUnitTestManifest/AndroidManifest.xml
+
+> Task :app:processDebugManifest
+Build cache key for task ':app:processDebugManifest' is d6ca9c7690300044d102fd9d1bb2f5d3
+Task ':app:processDebugManifest' is not up-to-date because:
+  No history is available.
+Stored cache entry for task ':app:processDebugManifest' with cache key d6ca9c7690300044d102fd9d1bb2f5d3
+Resolve mutations for :app:processDebugManifestForPackage (Thread[#83,Execution worker,5,main]) started.
+:app:processDebugManifestForPackage (Thread[#83,Execution worker,5,main]) started.
+
+> Task :app:processDebugManifestForPackage
+Build cache key for task ':app:processDebugManifestForPackage' is 74367c436ba13f1389b69fa3fdc314fa
+Task ':app:processDebugManifestForPackage' is not up-to-date because:
+  No history is available.
+Stored cache entry for task ':app:processDebugManifestForPackage' with cache key 74367c436ba13f1389b69fa3fdc314fa
+Resolve mutations for :app:processDebugResources (Thread[#84,Execution worker Thread 2,5,main]) started.
+:app:processDebugResources (Thread[#84,Execution worker Thread 2,5,main]) started.
+
+> Task :app:processDebugResources
+Build cache key for task ':app:processDebugResources' is d8842f4db13a6537fecbe434e8844e3f
+Task ':app:processDebugResources' is not up-to-date because:
+  No history is available.
+The input changes require a full rebuild for incremental task ':app:processDebugResources'.
+AAPT2 aapt2-9.1.1-14792394-linux Daemon #0: starting
+Aapt output file /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/intermediates/linked_resources_binary_format/debug/processDebugResources/linked-resources-binary-format-debug.ap_
+Stored cache entry for task ':app:processDebugResources' with cache key d8842f4db13a6537fecbe434e8844e3f
+Resolve mutations for :app:packageDebugUnitTestForUnitTest (Thread[#83,Execution worker,5,main]) started.
+:app:packageDebugUnitTestForUnitTest (Thread[#83,Execution worker,5,main]) started.
+
+> Task :app:packageDebugUnitTestForUnitTest
+Caching disabled for task ':app:packageDebugUnitTestForUnitTest' because:
+  Simple merging task
+Task ':app:packageDebugUnitTestForUnitTest' is not up-to-date because:
+  No history is available.
+Resolve mutations for :app:generateDebugUnitTestConfig (Thread[#84,Execution worker Thread 2,5,main]) started.
+:app:generateDebugUnitTestConfig (Thread[#85,Execution worker Thread 3,5,main]) started.
+
+> Task :app:generateDebugUnitTestConfig
+Caching disabled for task ':app:generateDebugUnitTestConfig' because:
+  Caching has been disabled for the task
+Task ':app:generateDebugUnitTestConfig' is not up-to-date because:
+  No history is available.
+
+> Task :app:kspDebugKotlin
+Build cache key for task ':app:kspDebugKotlin' is 08bde622ddbc55e30c761f314322cf1d
+Task ':app:kspDebugKotlin' is not up-to-date because:
+  No history is available.
+The input changes require a full rebuild for incremental task ':app:kspDebugKotlin'.
+i: [ksp] loaded provider(s): [androidx.room.RoomKspProcessor$Provider]
+i: [ksp] Processor 'androidx.room.RoomKspProcessor' has not opted in for upcoming features yet. It might break in a future version of KSP. To fix this, please update the processor to a version that is compatible with upcoming features.
+Stored cache entry for task ':app:kspDebugKotlin' with cache key 08bde622ddbc55e30c761f314322cf1d
+Resolve mutations for :app:compileDebugKotlin (Thread[#85,Execution worker Thread 3,5,main]) started.
+:app:compileDebugKotlin (Thread[#85,Execution worker Thread 3,5,main]) started.
+
+> Task :app:compileDebugKotlin
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+Build cache key for task ':app:compileDebugKotlin' is 670dcdf23c2bcba80b4ae46a6dd83119
+Task ':app:compileDebugKotlin' is not up-to-date because:
+  No history is available.
+The input changes require a full rebuild for incremental task ':app:compileDebugKotlin'.
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/debug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debug/java', not found
+Kotlin source files: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/widget/RetroMusicWidgetProvider.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/audio/RetroSoundEffects.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/audio/RetroEqualizer.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/audio/StudioPreviewPlayer.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/audio/AutoMix.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/audio/RetroPcmSynthesizer.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/audio/RetroAudioPlaybackService.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/audio/LrcParser.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/audio/MixRenderer.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/audio/RetroAudioPlayerEngine.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/audio/VisualizerEngine.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/audio/StudioJobs.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/audio/StudioDsp.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/audio/StudioRenderEngine.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/CrashReport.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/MainActivity.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/data/model/Song.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/data/model/RetroSkin.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/data/model/BuiltInArt.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/data/model/PlayerUiScale.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/data/local/AppDao.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/data/local/AppDatabase.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/data/local/Entities.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/data/repository/RetroMetadataService.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/data/repository/MusicRepository.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/data/repository/StreamingRepository.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/theme/Color.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/theme/Theme.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/theme/Type.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/viewmodel/MainViewModel.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/viewmodel/StreamingViewModel.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/components/RetroLyricsDisplay.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/components/SongArtwork.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/components/deck/RealisticCdView.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/components/deck/RealisticCassetteView.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/components/deck/RealisticVinylView.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/components/AlbumArtDisplay.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/components/RetroControlBar.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/components/VisualizerView.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/components/RetroSeekBar.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/components/GenerativeAlbumArt.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/components/RetroDigitalDisplay.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/components/RetroTactileButton.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/SurgicalParametricEqView.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/StudioSectionsPanels.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/QuickOpenTrackMenuDialog.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/TrackDeletion.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/StreamingScreen.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/SoundSplicerComponents.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/RadioScreen.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/CloudExportPanel.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/PlaylistScreen.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/MixtapeBuilderPanel.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/CloudAndFileImportScreen.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/DJMixerComponents.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/PlayerScreen.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/SkinSelectorDialog.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/LibraryScreen.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/EqualizerDialog.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/DJStudioScreen.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/StudioToolsComponents.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/StudioUi.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/screens/GoogleDriveScreen.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/skins/RetroSkinDefinitions.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/skins/RetroSkinsExtra.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debug/kotlin/com/example/data/local/AppDatabase_Impl.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debug/kotlin/com/example/data/local/AppDao_Impl.kt
+Java source files: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/source/buildConfig/debug/com/example/BuildConfig.java
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /usr/lib/jvm/temurin-21-jdk-amd64
+Finished executing kotlin compiler using IN_PROCESS strategy
+e: file:///home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/main/java/com/example/ui/components/AlbumArtDisplay.kt:211:38 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'Song?'.
+
+> Task :app:compileDebugKotlin FAILED
+Build 4bf3dfa7-893f-4473-b0be-22d223113bca is started
+AAPT2 aapt2-9.1.1-14792394-linux Daemon #0: shutdown
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1793047948191.json
+Build 4bf3dfa7-893f-4473-b0be-22d223113bca is closed
+
+See the complete report at file:///home/runner/work/Mixtape-Pro/Mixtape-Pro/build/reports/configuration-cache/497xwi85jo2irv5m4tfo2v1p6/4ybdhkmcny7jtrbsemcorrbmk/configuration-cache-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 51s
+24 actionable tasks: 14 executed, 10 from cache
+Configuration cache entry stored.
