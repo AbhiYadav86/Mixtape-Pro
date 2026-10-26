@@ -241,11 +241,13 @@ fun PlaylistScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "📼 SIDE A / TRACKLIST (${playlistSongs.size}):",
+                                text = "TRACKLIST • ${playlistSongs.size}",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace,
-                                color = skin.accentColor
+                                fontFamily = FontFamily.SansSerif,
+                                color = Color.White,
+                                maxLines = 1,
+                                modifier = Modifier.weight(1f)
                             )
 
                             if (playlistSongs.isNotEmpty()) {
@@ -316,11 +318,11 @@ fun PlaylistScreen(
                                             modifier = Modifier.weight(1f)
                                         ) {
                                             Text(
-                                                text = "${(index + 1).toString().padStart(2, '0')}. ",
+                                                text = "${(index + 1).toString().padStart(2, '0')}  ",
                                                 fontSize = 12.sp,
                                                 fontFamily = FontFamily.Monospace,
                                                 fontWeight = FontWeight.Bold,
-                                                color = skin.lcdTextColor
+                                                color = if (isCur) Color.White else Color(0xFF94A3B8)
                                             )
                                             Column {
                                                 Text(
@@ -328,8 +330,9 @@ fun PlaylistScreen(
                                                     fontSize = 13.sp,
                                                     fontFamily = FontFamily.SansSerif,
                                                     fontWeight = if (isCur) FontWeight.Bold else FontWeight.Normal,
-                                                    color = if (isCur) skin.accentColor else Color.White,
-                                                    maxLines = 1
+                                                    color = Color.White,
+                                                    maxLines = 1,
+                                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                                 )
                                                 Text(
                                                     text = "${song.artist} • ${song.genre}",
@@ -426,7 +429,9 @@ private fun PlaylistCard(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "📼 ${playlist.name}",
+                    text = playlist.name,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.SansSerif,
@@ -437,8 +442,9 @@ private fun PlaylistCard(
                     text = playlist.description.ifEmpty { "Curated Mixtape Pro tape" },
                     fontSize = 12.sp,
                     fontFamily = FontFamily.SansSerif,
-                    color = Color(0xFF94A3B8),
-                    maxLines = 1
+                    color = Color(0xFFAAB6C6),
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
             }
 

@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.isRoot
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.example.audio.LyricLine
@@ -25,7 +27,6 @@ import com.example.ui.screens.SkinSelectorDialog
 import com.example.ui.skins.RetroSkinDefinitions
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.captureRoboImage
-import com.github.takahirom.roborazzi.captureScreenRoboImage
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -89,7 +90,8 @@ class UiScreensTest {
 
     @Test fun skinsGallery() {
         show { SkinSelectorDialog(currentSkin = skin, onSkinSelected = {}, onDismiss = {}) }
-        captureScreenRoboImage("$dir/skins.png")
+        // the dialog is its own window: capture its root directly
+        compose.onAllNodes(isRoot()).onLast().captureRoboImage("$dir/skins.png")
     }
 
     @Test fun trackMenu() {
@@ -99,7 +101,7 @@ class UiScreensTest {
                 onSongSelected = {}, onPlaylistSelected = {}, onEnrichMetadata = {}, onDismiss = {}
             )
         }
-        captureScreenRoboImage("$dir/track-menu.png")
+        compose.onAllNodes(isRoot()).onLast().captureRoboImage("$dir/track-menu.png")
     }
 
     @Test fun radioStations() {

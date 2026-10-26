@@ -439,7 +439,7 @@ private fun QuickSongRow(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.SansSerif,
-                    color = if (isCurrent) skin.accentColor else Color.White,
+                    color = Color.White,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -509,7 +509,7 @@ private fun QuickSongRow(
                 fontSize = 11.sp,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold,
-                color = skin.lcdTextColor
+                color = if (isCurrent) Color.White else Color(0xFFAAB6C6)
             )
         }
     }
