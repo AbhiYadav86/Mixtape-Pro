@@ -35,6 +35,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        CrashReport.install(this)
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
@@ -56,6 +57,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     PlayerScreen(viewModel = viewModel)
                 }
+                CrashReportDialog()
             }
         }
     }

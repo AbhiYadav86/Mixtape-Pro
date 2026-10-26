@@ -23,6 +23,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
@@ -143,7 +146,9 @@ fun SkinSelectorDialog(
                             modifier = Modifier.size(22.dp)
                         )
                         Text(
-                            text = "RETRO SKINS GALLERY",
+                            text = "SKINS",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.SansSerif,
@@ -241,43 +246,42 @@ fun SkinSelectorDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Category Filter Chips with Equalizer/LCD Bevel Style
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    categories.forEach { category ->
-                        val isSelected = selectedCategory == category
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(
-                                    if (isSelected) currentSkin.accentColor.copy(alpha = 0.25f)
-                                    else Color(0x22000000)
-                                )
-                                .border(
-                                    1.dp,
-                                    if (isSelected) currentSkin.accentColor else currentSkin.lcdDimColor.copy(alpha = 0.4f),
-                                    RoundedCornerShape(4.dp)
-                                )
-                                .clickable {
-                                    RetroSoundEffects.playClick(RetroSoundEffects.SoundType.SLIDER_TICK)
-                                    selectedCategory = category
+                // Category filters: a 3 x 2 grid so every label fits, even with large system text
+                val categoryLabels = mapOf(
+                    "ALL" to "All", "RETRO MP3" to "Retro MP3", "GAMING" to "Gaming",
+                    "Y2K CYBER" to "Y2K", "TRANSLUCENT" to "Clear", "HI-FI STUDIO" to "Hi-Fi"
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(vertical = 2.dp)) {
+                    categories.chunked(3).forEach { row ->
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            row.forEach { category ->
+                                val isSelected = selectedCategory == category
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 38.dp)
+                                        .clip(RoundedCornerShape(19.dp))
+                                        .background(if (isSelected) currentSkin.accentColor else Color(0xFF1E222D))
+                                        .border(1.dp, if (isSelected) currentSkin.accentColor else Color(0x55FFFFFF), RoundedCornerShape(19.dp))
+                                        .clickable {
+                                            RetroSoundEffects.playClick(RetroSoundEffects.SoundType.SLIDER_TICK)
+                                            selectedCategory = category
+                                        }
+                                        .padding(horizontal = 6.dp, vertical = 6.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = categoryLabels[category] ?: category,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.SansSerif,
+                                        color = if (isSelected) readableOn(currentSkin.accentColor) else Color.White,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center
+                                    )
                                 }
-                                .padding(vertical = 6.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = category,
-                                fontSize = 9.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.SansSerif,
-                                color = if (isSelected) currentSkin.accentColor else currentSkin.titleBarTextColor.copy(alpha = 0.7f),
-                                maxLines = 1
-                            )
+                            }
                         }
                     }
                 }
@@ -287,23 +291,27 @@ fun SkinSelectorDialog(
                 // Results count sub-header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "MATCHED SKINS: ${filteredSkins.size} OF ${RetroSkinDefinitions.ALL_SKINS.size}",
-                        fontSize = 10.5.sp,
+                        text = "${filteredSkins.size} of ${RetroSkinDefinitions.ALL_SKINS.size}",
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.SansSerif,
-                        color = currentSkin.lcdTextColor.copy(alpha = 0.8f)
+                        color = Color(0xFFCBD5E1),
+                        maxLines = 1
                     )
-
+                    Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "ACTIVE: ${currentSkin.name.uppercase()}",
-                        fontSize = 10.5.sp,
+                        text = "Now: ${currentSkin.name}",
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.SansSerif,
-                        color = currentSkin.accentColor
+                        color = readableAccent(currentSkin.accentColor),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.weight(1f)
                     )
                 }
 
@@ -459,8 +467,11 @@ private fun SkinCard(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.SansSerif,
-                    color = if (isSelected) skin.accentColor else Color.White,
-                    maxLines = 1,
+                    color = if (isSelected) readableAccent(skin.accentColor) else Color.White,
+                    maxLines = 2,
+                    minLines = 2,
+                    lineHeight = 17.sp,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
 
@@ -481,7 +492,8 @@ private fun SkinCard(
                 fontSize = 12.sp,
                 fontFamily = FontFamily.SansSerif,
                 fontWeight = FontWeight.Medium,
-                color = skin.accentColor
+                color = readableAccent(skin.accentColor),
+                maxLines = 1
             )
 
             Spacer(modifier = Modifier.height(2.dp))
@@ -490,10 +502,19 @@ private fun SkinCard(
                 text = skin.description,
                 fontSize = 11.sp,
                 fontFamily = FontFamily.SansSerif,
-                color = Color(0xFF94A3B8),
+                color = Color(0xFFAAB6C6),
                 maxLines = 2,
-                lineHeight = 14.sp
+                minLines = 2,
+                lineHeight = 14.sp,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
 }
+
+/** The skin's accent colour, lifted when it's too dark to read on the dark gallery cards. */
+private fun readableAccent(c: Color): Color =
+    if (c.luminance() < 0.18f) androidx.compose.ui.graphics.lerp(c, Color.White, 0.55f) else c
+
+/** Black or white text, whichever reads better on [bg]. */
+private fun readableOn(bg: Color): Color = if (bg.luminance() > 0.45f) Color.Black else Color.White

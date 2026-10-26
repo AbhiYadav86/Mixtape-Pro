@@ -82,6 +82,7 @@ fun PlayerScreen(
     var showEqDialog by remember { mutableStateOf(false) }
     var showQuitConfirmDialog by remember { mutableStateOf(false) }
     var showTrackMenuDialog by remember { mutableStateOf(false) }
+    var showFullLyrics by remember { mutableStateOf(false) }
     var showVisualMenu by remember { mutableStateOf(false) }
 
     val driveSongs = remember(allSongs) {
@@ -352,17 +353,16 @@ fun PlayerScreen(
                                                         modifier = Modifier.fillMaxSize()
                                                     )
 
-                                                    // Optional synced lyrics floating OVER the Equalizer
+                                                    // Optional synced lyrics over the visualiser: one line at a time,
+                                                    // with a button for the full-screen lyrics
                                                     if (isLyricsOverlayActive) {
-                                                        RetroLyricsDisplay(
+                                                        com.example.ui.components.LyricsLineOverlay(
                                                             lyrics = currentLyrics,
                                                             currentPositionMs = currentPositionMs,
                                                             skin = skin,
-                                                            isOverlay = true,
                                                             isFetching = isFetchingLyrics,
-                                                            onSeekTo = { viewModel.seekToPosition(it) },
                                                             onFetchOnline = { viewModel.fetchOnlineLyricsForCurrentSong() },
-                                                            onFetchArt = { viewModel.fetchOnlineArtworkForCurrentSong() },
+                                                            onFullScreen = { showFullLyrics = true },
                                                             modifier = Modifier.fillMaxSize()
                                                         )
                                                     }
@@ -783,6 +783,21 @@ fun PlayerScreen(
     }
 
     // Quick Open Track & Mixtape Menu Dialog
+    if (showFullLyrics) {
+        com.example.ui.components.FullScreenLyricsDialog(
+            title = currentSong?.title ?: "",
+            artist = currentSong?.artist ?: "",
+            lyrics = currentLyrics,
+            currentPositionMs = currentPositionMs,
+            skin = skin,
+            isFetching = isFetchingLyrics,
+            onSeekTo = { viewModel.seekToPosition(it) },
+            onFetchOnline = { viewModel.fetchOnlineLyricsForCurrentSong() },
+            onFetchArt = { viewModel.fetchOnlineArtworkForCurrentSong() },
+            onDismiss = { showFullLyrics = false }
+        )
+    }
+
     if (showTrackMenuDialog) {
         QuickOpenTrackMenuDialog(
             allSongs = allSongs,

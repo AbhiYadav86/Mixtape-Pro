@@ -414,7 +414,7 @@ private fun PlaylistCard(
                     .border(1.dp, skin.chassisBorderColor, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                val coverResId: Int = playlist.coverRes ?: R.drawable.img_cassette_mixtape
+                val coverResId: Int = com.example.data.model.BuiltInArt.cover(playlist.coverRes)
                 Image(
                     painter = painterResource(id = coverResId),
                     contentDescription = playlist.name,

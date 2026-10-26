@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -102,7 +103,7 @@ fun QuickOpenTrackMenuDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                         Box(
                             modifier = Modifier
                                 .size(36.dp)
@@ -122,13 +123,17 @@ fun QuickOpenTrackMenuDialog(
                         Column {
                             Text(
                                 text = "OPEN AUDIO SOURCE",
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.SansSerif,
                                 color = skin.lcdTextColor
                             )
                             Text(
-                                text = "Select tracks from Library or Mixtapes",
+                                text = "Pick a track or a mixtape",
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                                 fontSize = 11.sp,
                                 fontFamily = FontFamily.SansSerif,
                                 color = Color(0xFF94A3B8)
@@ -159,8 +164,8 @@ fun QuickOpenTrackMenuDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     listOf(
-                        0 to "🎵 LIBRARY TRACKS (${allSongs.size})",
-                        1 to "📼 MIXTAPES & PLAYLISTS (${allPlaylists.size})"
+                        0 to "LIBRARY (${allSongs.size})",
+                        1 to "MIXTAPES (${allPlaylists.size})"
                     ).forEach { (sectionIdx, title) ->
                         val isSelected = selectedSection == sectionIdx
                         Box(
@@ -182,7 +187,8 @@ fun QuickOpenTrackMenuDialog(
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.SansSerif,
                                 color = if (isSelected) Color.Black else Color.White,
-                                maxLines = 1
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -270,6 +276,8 @@ fun QuickOpenTrackMenuDialog(
                             ) {
                                 Text(
                                     text = label,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                     fontSize = 11.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                     fontFamily = FontFamily.SansSerif,
@@ -432,7 +440,8 @@ private fun QuickSongRow(
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.SansSerif,
                     color = if (isCurrent) skin.accentColor else Color.White,
-                    maxLines = 1
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
                 val subtitle = when (groupingMode) {
                     1 -> "👤 ${song.artist} • ${song.album}"
@@ -445,7 +454,8 @@ private fun QuickSongRow(
                     fontSize = 11.sp,
                     fontFamily = FontFamily.SansSerif,
                     color = Color(0xFF94A3B8),
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 // Metadata status badges (Lyrics / Album Art)
@@ -550,6 +560,8 @@ private fun QuickPlaylistRow(
                 Column {
                     Text(
                         text = playlist.name,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.SansSerif,

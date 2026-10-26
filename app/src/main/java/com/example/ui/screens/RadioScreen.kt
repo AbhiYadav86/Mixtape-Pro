@@ -21,6 +21,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -109,7 +110,7 @@ fun RadioScreen(
                 .padding(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            val sections = listOf("📻 LIVE FM TUNER", "🌐 90s/00s VAULT")
+            val sections = listOf("📻 LIVE RADIO", "🌐 90s/00s VAULT")
             sections.forEachIndexed { index, title ->
                 val isSelected = selectedSection == index
                 Box(
@@ -129,7 +130,9 @@ fun RadioScreen(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.SansSerif,
-                        color = if (isSelected) Color.Black else Color.White
+                        color = if (isSelected) Color.Black else Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -154,7 +157,8 @@ fun RadioScreen(
                         // Digital LCD tuner readout with Live and Offline totals
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.weight(1f)
                         ) {
                             Box(
                                 modifier = Modifier
@@ -167,15 +171,19 @@ fun RadioScreen(
                             )
                             Column {
                                 Text(
-                                    text = if (isScanningFrequencies) "SCANNING FREQUENCIES..." else "TUNER ACTIVE: $liveCount LIVE • $offlineCount OFFLINE",
+                                    text = if (isScanningFrequencies) "SCANNING…" else "$liveCount LIVE • $offlineCount OFF AIR",
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     fontFamily = FontFamily.Monospace,
                                     color = if (isScanningFrequencies) Color(0xFFFBBF24) else Color(0xFF34D399)
                                 )
                                 Text(
-                                    text = "GREEN = LIVE ON-AIR • RED = OFFLINE ARCHIVE",
-                                    fontSize = 9.sp,
+                                    text = "Green = on air • Red = off air",
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSize = 10.sp,
                                     fontFamily = FontFamily.Monospace,
                                     fontWeight = FontWeight.SemiBold,
                                     color = Color(0xFF94A3B8)
@@ -202,7 +210,8 @@ fun RadioScreen(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = if (isScanningFrequencies) "PINGING..." else "SCAN PING",
+                                text = if (isScanningFrequencies) "…" else "SCAN",
+                                maxLines = 1,
                                 fontSize = 11.sp,
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Bold,
@@ -248,9 +257,9 @@ fun RadioScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 listOf(
-                    "ALL" to "ALL (${radioStations.size})",
-                    "LIVE" to "🟢 LIVE ($liveCount)",
-                    "OFFLINE" to "🔴 OFFLINE ($offlineCount)"
+                    "ALL" to "All (${radioStations.size})",
+                    "LIVE" to "Live ($liveCount)",
+                    "OFFLINE" to "Off air ($offlineCount)"
                 ).forEach { (filterKey, label) ->
                     val isSelected = selectedStatusFilter == filterKey
                     Box(
@@ -289,8 +298,9 @@ fun RadioScreen(
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.SansSerif,
-                            color = if (isSelected) Color.White else Color(0xFF94A3B8),
-                            maxLines = 1
+                            color = if (isSelected) Color.White else Color(0xFFCBD5E1),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -300,27 +310,18 @@ fun RadioScreen(
 
             // Indented Row below Live and Offline for 90's and 2000's Radio Stations
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 18.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "↳ ERA:",
-                    fontSize = 10.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    color = skin.accentColor.copy(alpha = 0.85f)
-                )
-
                 listOf(
-                    "90s" to "📻 90's Radio Stations",
-                    "2000s" to "💿 2000's Radio Stations"
+                    "90s" to "90s stations",
+                    "2000s" to "2000s stations"
                 ).forEach { (eraKey, label) ->
                     val isSelected = selectedStatusFilter == eraKey
                     Box(
                         modifier = Modifier
+                            .weight(1f)
                             .clip(RoundedCornerShape(6.dp))
                             .background(
                                 if (isSelected) skin.accentColor.copy(alpha = 0.28f)
@@ -343,8 +344,9 @@ fun RadioScreen(
                             fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                             fontFamily = FontFamily.SansSerif,
-                            color = if (isSelected) skin.accentColor else Color(0xFFCBD5E1),
-                            maxLines = 1
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -554,6 +556,9 @@ fun RadioScreen(
                                                 val freqStr = status?.frequencyMhz ?: "98.5 FM"
                                                 Text(
                                                     text = freqStr,
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                    overflow = TextOverflow.Ellipsis,
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     fontFamily = FontFamily.Monospace,
@@ -569,22 +574,65 @@ fun RadioScreen(
                                                 fontWeight = FontWeight.Bold,
                                                 fontFamily = FontFamily.SansSerif,
                                                 color = if (isCurrent) skin.accentColor else Color.White,
-                                                maxLines = 1
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis
                                             )
 
                                             Text(
                                                 text = "${station.genre} • ${station.artist}",
                                                 fontSize = 11.sp,
                                                 fontFamily = FontFamily.SansSerif,
-                                                color = if (isStationLive) Color(0xFF94A3B8) else Color(0xFFDC2626).copy(alpha = 0.8f),
-                                                maxLines = 1
+                                                color = if (isStationLive) Color(0xFFAAB6C6) else Color(0xFFFCA5A5),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                         }
 
-                                        Spacer(modifier = Modifier.width(6.dp))
+                                    }
 
-                                        // Tune In or Recheck Button
-                                        if (isStationLive) {
+                                    // Actions on their own row, so the station name and badges keep their width
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    if (isStationLive) {
+                                        Button(
+                                            onClick = {
+                                                RetroSoundEffects.playClick(RetroSoundEffects.SoundType.WINAMP_CLICK)
+                                                onPlaySong(station)
+                                                onNavigateToPlayer()
+                                            },
+                                            shape = RoundedCornerShape(8.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = if (isCurrent) skin.secondaryAccentColor else Color(0xFF10B981)
+                                            ),
+                                            modifier = Modifier.fillMaxWidth().heightIn(min = 42.dp),
+                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                        ) {
+                                            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = if (isCurrent && isPlaying) "ON AIR" else "TUNE IN",
+                                                fontSize = 13.sp,
+                                                fontFamily = FontFamily.SansSerif,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.Black,
+                                                maxLines = 1
+                                            )
+                                        }
+                                    } else {
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                                            OutlinedButton(
+                                                onClick = {
+                                                    RetroSoundEffects.playClick(RetroSoundEffects.SoundType.RADIO_TUNER_TICK)
+                                                    onRecheckStation(station)
+                                                },
+                                                shape = RoundedCornerShape(8.dp),
+                                                modifier = Modifier.weight(1f).heightIn(min = 42.dp),
+                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEF4444))
+                                            ) {
+                                                Icon(Icons.Default.Refresh, contentDescription = null, tint = Color(0xFFFCA5A5), modifier = Modifier.size(18.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("RETEST", fontSize = 12.sp, fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, color = Color(0xFFFCA5A5), maxLines = 1)
+                                            }
                                             Button(
                                                 onClick = {
                                                     RetroSoundEffects.playClick(RetroSoundEffects.SoundType.WINAMP_CLICK)
@@ -592,105 +640,35 @@ fun RadioScreen(
                                                     onNavigateToPlayer()
                                                 },
                                                 shape = RoundedCornerShape(8.dp),
-                                                colors = ButtonDefaults.buttonColors(
-                                                    containerColor = if (isCurrent) skin.secondaryAccentColor else Color(0xFF10B981)
-                                                ),
-                                                modifier = Modifier.height(38.dp),
-                                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF374151)),
+                                                modifier = Modifier.weight(1f).heightIn(min = 42.dp),
+                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
                                             ) {
-                                                Text(
-                                                    text = if (isCurrent && isPlaying) "ON AIR" else "TUNE IN",
-                                                    fontSize = 11.sp,
-                                                    fontFamily = FontFamily.SansSerif,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Color.Black
-                                                )
-                                            }
-                                        } else {
-                                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                OutlinedButton(
-                                                    onClick = {
-                                                        RetroSoundEffects.playClick(RetroSoundEffects.SoundType.RADIO_TUNER_TICK)
-                                                        onRecheckStation(station)
-                                                    },
-                                                    shape = RoundedCornerShape(6.dp),
-                                                    modifier = Modifier.height(38.dp),
-                                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEF4444))
-                                                ) {
-                                                    Text(
-                                                        text = "RETEST",
-                                                        fontSize = 10.sp,
-                                                        fontFamily = FontFamily.Monospace,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = Color(0xFFEF4444)
-                                                    )
-                                                }
-                                                Button(
-                                                    onClick = {
-                                                        RetroSoundEffects.playClick(RetroSoundEffects.SoundType.WINAMP_CLICK)
-                                                        onPlaySong(station)
-                                                        onNavigateToPlayer()
-                                                    },
-                                                    shape = RoundedCornerShape(6.dp),
-                                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF374151)),
-                                                    modifier = Modifier.height(38.dp),
-                                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                                ) {
-                                                    Text(
-                                                        text = "SYNTH",
-                                                        fontSize = 10.sp,
-                                                        fontFamily = FontFamily.Monospace,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = Color.White
-                                                    )
-                                                }
+                                                Icon(Icons.Default.GraphicEq, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("PLAY SYNTH", fontSize = 12.sp, fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1)
                                             }
                                         }
                                     }
 
-                                    // Diagnostics Footer Line: Bitrate, Ping Latency, Signal Quality
+                                    // Signal line
                                     Spacer(modifier = Modifier.height(6.dp))
-                                    Row(
+                                    val pingText = if (status != null && status.pingMs > 0) "${status.pingMs} ms" else "24 ms"
+                                    val signal = status?.signalPercent ?: 95
+                                    val listeners = status?.listenerCount ?: 1240
+                                    Text(
+                                        text = if (isStationLive) "📶 $signal% • $pingText • ${station.bitrateKbps} kbps • 👥 $listeners" else "📶 No signal • off the air",
+                                        fontSize = 11.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (isStationLive) Color(0xFF34D399) else Color(0xFFFCA5A5),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .background(
-                                                if (isStationLive) Color(0xFF11141C) else Color(0xFF281518),
-                                                RoundedCornerShape(4.dp)
-                                            )
-                                            .padding(horizontal = 8.dp, vertical = 3.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        val bitrate = if (isStationLive) "${station.bitrateKbps} kbps MP3" else "OFF-AIR ARCHIVE"
-                                        val pingText = if (status != null && status.pingMs > 0) "${status.pingMs}ms" else "24ms"
-                                        val signal = if (isStationLive) (status?.signalPercent ?: 95) else 0
-
-                                        Text(
-                                            text = if (isStationLive) "📶 Signal: $signal% • $pingText" else "📶 No Signal (0% • Off-Air)",
-                                            fontSize = 10.sp,
-                                            fontFamily = FontFamily.Monospace,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = if (isStationLive) Color(0xFF34D399) else Color(0xFFEF4444)
-                                        )
-
-                                        Text(
-                                            text = bitrate,
-                                            fontSize = 10.sp,
-                                            fontFamily = FontFamily.Monospace,
-                                            color = if (isStationLive) Color(0xFF94A3B8) else Color(0xFFEF4444)
-                                        )
-
-                                        if (isStationLive) {
-                                            val listeners = status?.listenerCount ?: 1240
-                                            Text(
-                                                text = "👥 $listeners",
-                                                fontSize = 10.sp,
-                                                fontFamily = FontFamily.Monospace,
-                                                color = skin.accentColor
-                                            )
-                                        }
-                                    }
+                                            .background(if (isStationLive) Color(0xFF11141C) else Color(0xFF281518), RoundedCornerShape(4.dp))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
                                 }
                             }
                         }

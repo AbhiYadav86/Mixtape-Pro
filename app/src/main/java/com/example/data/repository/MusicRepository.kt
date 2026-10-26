@@ -13,6 +13,7 @@ import com.example.data.local.PlaylistEntity
 import com.example.data.local.PlaylistSongCrossRef
 import com.example.data.local.SongEntity
 import com.example.data.model.AudioSource
+import com.example.data.model.BuiltInArt
 import com.example.data.model.Playlist
 import com.example.data.model.RadioStationStatus
 import com.example.data.model.Song
@@ -49,7 +50,7 @@ class MusicRepository(
                 id = entity.id,
                 name = entity.name,
                 description = entity.description,
-                coverRes = entity.coverRes,
+                coverRes = BuiltInArt.cover(entity.coverRes),
                 createdAt = entity.createdAt,
                 iconName = entity.iconName
             )
@@ -489,7 +490,7 @@ class MusicRepository(
             val url = java.net.URL(station.uri)
             val connection = url.openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "GET"
-            connection.setRequestProperty("User-Agent", "Flashback99-RadioTuner/1.0 (Android Winamp)")
+            connection.setRequestProperty("User-Agent", "MixtapePro-RadioTuner/3.0 (Android)")
             connection.setRequestProperty("Range", "bytes=0-1024")
             connection.connectTimeout = 2800
             connection.readTimeout = 2800
@@ -1150,9 +1151,9 @@ class MusicRepository(
         return listOf(
             Song(
                 id = "retro_demo_01",
-                title = "Pump Up The Winamp (1998 Extended Mix)",
-                artist = "DJ Nullsoft & The Llama",
-                album = "It Really Whips The Llama's Ass",
+                title = "Turn It Up Tonight (1998 Extended Mix)",
+                artist = "DJ Pixel & The Bassline",
+                album = "Bass In Your Face '98",
                 durationMs = 218000L,
                 uri = "https://stream.dancewave.online/dance.mp3",
                 albumArtUri = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&auto=format&fit=crop&q=80",
@@ -1162,13 +1163,13 @@ class MusicRepository(
                 year = "1998",
                 bitrateKbps = 192,
                 sampleRateKhz = 44,
-                folderPath = "Winamp Demos",
+                folderPath = "Demo Tapes",
                 isFavorite = true
             ),
             Song(
                 id = "retro_demo_02",
                 title = "Late Night Neon Cruise (Synthwave)",
-                artist = "Kavinsky Wave",
+                artist = "Neon Highway Wave",
                 album = "Y2K Synth Odyssey",
                 durationMs = 242000L,
                 uri = "https://ice5.somafm.com/groovesalad-128-mp3",
@@ -1186,7 +1187,7 @@ class MusicRepository(
                 id = "retro_demo_03",
                 title = "Teenage Garage Riot '95",
                 artist = "The Flannel Generation",
-                album = "Nevermind The Dialup",
+                album = "Dial-Up Distortion",
                 durationMs = 195000L,
                 uri = "https://ice5.somafm.com/indiepop-128-mp3",
                 albumArtUri = "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=600&auto=format&fit=crop&q=80",
@@ -1200,9 +1201,9 @@ class MusicRepository(
             ),
             Song(
                 id = "retro_demo_04",
-                title = "Napster Download Complete (Y2K Pop)",
+                title = "Download Complete (Y2K Pop)",
                 artist = "Millennium Pop Queens",
-                album = "TRL Top 20 1999",
+                album = "Countdown Top 20 1999",
                 durationMs = 208000L,
                 uri = "https://ice5.somafm.com/poptron-128-mp3",
                 albumArtUri = "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&auto=format&fit=crop&q=80",
@@ -1235,7 +1236,7 @@ class MusicRepository(
                 id = "retro_demo_06",
                 title = "Warehouse Acid Rave 303",
                 artist = "London Underground 96",
-                album = "Thunderdome Nostalgia",
+                album = "Warehouse Nostalgia",
                 durationMs = 254000L,
                 uri = "https://stream.vante.me/chiptune.mp3",
                 albumArtUri = "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80",

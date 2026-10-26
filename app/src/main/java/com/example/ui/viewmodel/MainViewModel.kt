@@ -72,7 +72,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Automatically show lyrics in the spectrum area whenever a track has them
-    private val _autoShowLyrics = MutableStateFlow(true)
+    private val _autoShowLyrics = MutableStateFlow(false) // off by default; the LYRICS button turns them on
     val autoShowLyrics: StateFlow<Boolean> = _autoShowLyrics.asStateFlow()
 
     // Background library art/lyrics enrichment progress (null when idle)
@@ -188,7 +188,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _currentSkin.value = RetroSkinDefinitions.getSkinById(skinId)
             }
 
-            appDao.getPreference("auto_show_lyrics")?.let { _autoShowLyrics.value = it != "false" }
+            appDao.getPreference("auto_show_lyrics_v2")?.let { _autoShowLyrics.value = it == "true" }
 
             // Load saved player UI scale preference
             appDao.getPreference("player_ui_scale_id")?.let { scaleId ->
@@ -295,7 +295,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setAutoShowLyrics(enabled: Boolean) {
         _autoShowLyrics.value = enabled
-        viewModelScope.launch { appDao.setPreference(AppPreferenceEntity("auto_show_lyrics", enabled.toString())) }
+        viewModelScope.launch { appDao.setPreference(AppPreferenceEntity("auto_show_lyrics_v2", enabled.toString())) }
     }
 
     /** Fill in missing album art & lyrics for the whole library (runs quietly in the background). */

@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -43,7 +45,9 @@ fun RetroLyricsDisplay(
     onSeekTo: (Long) -> Unit,
     onFetchOnline: () -> Unit,
     onFetchArt: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** 1 = compact (inside the player); larger for the full-screen view. */
+    textScale: Float = 1f
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -219,10 +223,10 @@ fun RetroLyricsDisplay(
                                 isPast -> Color(0xFF64748B)
                                 else -> Color(0xFF475569)
                             },
-                            fontSize = 9.sp,
+                            fontSize = (9 * textScale).sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
-                            modifier = Modifier.width(36.dp)
+                            modifier = Modifier.width((36 * textScale).dp)
                         )
 
                         // Lyric text
@@ -233,10 +237,10 @@ fun RetroLyricsDisplay(
                                 isPast -> Color(0xFF94A3B8)
                                 else -> Color(0xFF64748B)
                             },
-                            fontSize = if (isActive) 12.sp else 11.sp,
+                            fontSize = ((if (isActive) 12 else 11) * textScale).sp,
                             fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
                             fontFamily = FontFamily.SansSerif,
-                            maxLines = 2,
+                            maxLines = if (textScale > 1f) 4 else 2,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
                         )
@@ -280,5 +284,165 @@ fun RetroLyricsDisplay(
                     )
                 )
         )
+    }
+}
+
+
+/**
+ * Lyrics over the visualiser, one line at a time: the current line large and centred, the next
+ * line small underneath, in a band at the bottom so the visualiser stays visible. The expand
+ * button opens the full-screen lyrics.
+ */
+@Composable
+fun LyricsLineOverlay(
+    lyrics: List<LyricLine>,
+    currentPositionMs: Long,
+    skin: RetroSkin,
+    isFetching: Boolean,
+    onFetchOnline: () -> Unit,
+    onFullScreen: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val activeIndex = remember(lyrics, currentPositionMs) {
+        if (lyrics.isEmpty()) -1 else lyrics.indexOfLast { it.timeMs <= currentPositionMs }
+    }
+    val current = lyrics.getOrNull(activeIndex)?.text?.takeIf { it.isNotBlank() }
+        ?: if (activeIndex < 0 && lyrics.isNotEmpty()) "♪" else lyrics.getOrNull(activeIndex)?.let { "♪" }
+    val next = lyrics.getOrNull(activeIndex + 1)?.text?.takeIf { it.isNotBlank() }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xCC05070C), Color(0xEE05070C))))
+                .padding(start = 10.dp, end = 10.dp, top = 14.dp, bottom = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (lyrics.isEmpty()) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        if (isFetching) "Looking for lyrics…" else "No lyrics for this song",
+                        color = Color(0xFFCBD5E1), fontSize = 12.sp, fontFamily = FontFamily.SansSerif
+                    )
+                    if (!isFetching) {
+                        Text(
+                            "FIND LYRICS",
+                            color = skin.accentColor, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .border(1.dp, skin.accentColor, RoundedCornerShape(4.dp))
+                                .clickable { onFetchOnline() }
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+            } else {
+                androidx.compose.animation.Crossfade(targetState = current ?: "", label = "lyricLine") { line ->
+                    Text(
+                        text = line,
+                        color = Color.White,
+                        fontSize = 17.sp,
+                        lineHeight = 21.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.SansSerif,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                if (next != null) {
+                    Text(
+                        text = next,
+                        color = Color(0xFF94A3B8),
+                        fontSize = 12.sp,
+                        fontFamily = FontFamily.SansSerif,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth().padding(top = 2.dp)
+                    )
+                }
+            }
+        }
+        // Full-screen button
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(6.dp)
+                .size(30.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(Color(0xAA05070C))
+                .border(1.dp, skin.accentColor.copy(alpha = 0.7f), RoundedCornerShape(6.dp))
+                .clickable { onFullScreen() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                androidx.compose.material.icons.Icons.Default.Fullscreen,
+                contentDescription = "Full-screen lyrics",
+                tint = Color.White,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+/** Full-screen synced lyrics: scrolls with the song, tap a line to jump there. */
+@Composable
+fun FullScreenLyricsDialog(
+    title: String,
+    artist: String,
+    lyrics: List<LyricLine>,
+    currentPositionMs: Long,
+    skin: RetroSkin,
+    isFetching: Boolean,
+    onSeekTo: (Long) -> Unit,
+    onFetchOnline: () -> Unit,
+    onFetchArt: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF070B12))
+                .padding(top = 12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp)
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(title, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(artist, color = skin.accentColor, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF1E2430))
+                        .clickable { onDismiss() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(androidx.compose.material.icons.Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                }
+            }
+            RetroLyricsDisplay(
+                lyrics = lyrics,
+                currentPositionMs = currentPositionMs,
+                skin = skin,
+                isOverlay = false,
+                isFetching = isFetching,
+                onSeekTo = onSeekTo,
+                onFetchOnline = onFetchOnline,
+                onFetchArt = onFetchArt,
+                textScale = 1.5f,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }

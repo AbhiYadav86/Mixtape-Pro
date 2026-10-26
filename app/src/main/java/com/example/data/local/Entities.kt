@@ -34,7 +34,7 @@ data class SongEntity(
         durationMs = durationMs,
         uri = uri,
         albumArtUri = albumArtUri,
-        albumArtRes = albumArtRes,
+        albumArtRes = com.example.data.model.BuiltInArt.songArt(albumArtRes),
         source = runCatching { AudioSource.valueOf(source) }.getOrDefault(AudioSource.LOCAL),
         genre = genre,
         year = year,

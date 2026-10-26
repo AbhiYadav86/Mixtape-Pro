@@ -205,9 +205,9 @@ private fun RenderAlbumImage(song: Song?, onArtworkMissing: (Song) -> Unit = {})
                 loadFailed = true
             }
         )
-    } else if (song?.albumArtRes != null && song.albumArtRes != 0 && song.albumArtRes != com.example.R.drawable.img_cd_jewel_case) {
+    } else if (com.example.data.model.BuiltInArt.songArt(song?.albumArtRes)?.let { it != com.example.R.drawable.img_cd_jewel_case } == true) {
         Image(
-            painter = painterResource(id = song.albumArtRes),
+            painter = painterResource(id = com.example.data.model.BuiltInArt.songArt(song?.albumArtRes)!!),
             contentDescription = song.title,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
