@@ -1,0 +1,32 @@
+    ART    [Nickelback - Burn It to the Ground] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis16648774107807636006/com.mixtapepro.player-dataDir/files/artwork/art_test_-1891660041.jpg
+    LYRICS [Nickelback - Burn It to the Ground] -> 60 lines
+    ART    [Nickelback - When We Stand Together] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis16648774107807636006/com.mixtapepro.player-dataDir/files/artwork/art_test_-1326496848.jpg
+    LYRICS [Nickelback - When We Stand Together] -> 60 lines
+    ART    [Chris Isaak - Wicked Game] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis16648774107807636006/com.mixtapepro.player-dataDir/files/artwork/art_test_415990489.jpg
+    LYRICS [Chris Isaak - Wicked Game] -> 38 lines
+    ART    [The Righteous Brothers - You've Lost That Lovin' Feelin'] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis16648774107807636006/com.mixtapepro.player-dataDir/files/artwork/art_test_58216561.jpg
+    LYRICS [The Righteous Brothers - You've Lost That Lovin' Feelin'] -> 41 lines
+    ART    [Unknown Artist - Kenny Loggins - Playing With the Boys] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis16648774107807636006/com.mixtapepro.player-dataDir/files/artwork/art_test_960008533.jpg
+    LYRICS [Unknown Artist - Kenny Loggins - Playing With the Boys] -> 50 lines
+    ART    [RAJIV DIXIT - Viruddh Bhojan kabhi na] -> NONE
+    LYRICS [RAJIV DIXIT - Viruddh Bhojan kabhi na] -> NONE
+    AUDIUS trending -> 100 tracks; first=Skrillex - Kliptown Empyrean | https://api.audius.co/v1/tracks/G0wyE/stream?app_name=MixtapePro
+    AUDIUS search synthwave -> 10 tracks
+    ARCHIVE preset -> 40 items; first=csr049
+    ARCHIVE tracks for csr049 -> 16; first=https://archive.org/download/csr049/csr049_wcwc_01-nick-chapman_take-me-now.mp3
+ART    [Nickelback - Burn It to the Ground] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis16648774107807636006/com.mixtapepro.player-dataDir/files/artwork/art_test_-1891660041.jpg
+LYRICS [Nickelback - Burn It to the Ground] -> 60 lines
+ART    [Nickelback - When We Stand Together] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis16648774107807636006/com.mixtapepro.player-dataDir/files/artwork/art_test_-1326496848.jpg
+LYRICS [Nickelback - When We Stand Together] -> 60 lines
+ART    [Chris Isaak - Wicked Game] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis16648774107807636006/com.mixtapepro.player-dataDir/files/artwork/art_test_415990489.jpg
+LYRICS [Chris Isaak - Wicked Game] -> 38 lines
+ART    [The Righteous Brothers - You've Lost That Lovin' Feelin'] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis16648774107807636006/com.mixtapepro.player-dataDir/files/artwork/art_test_58216561.jpg
+LYRICS [The Righteous Brothers - You've Lost That Lovin' Feelin'] -> 41 lines
+ART    [Unknown Artist - Kenny Loggins - Playing With the Boys] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis16648774107807636006/com.mixtapepro.player-dataDir/files/artwork/art_test_960008533.jpg
+LYRICS [Unknown Artist - Kenny Loggins - Playing With the Boys] -> 50 lines
+ART    [RAJIV DIXIT - Viruddh Bhojan kabhi na] -> NONE
+LYRICS [RAJIV DIXIT - Viruddh Bhojan kabhi na] -> NONE
+AUDIUS trending -> 100 tracks; first=Skrillex - Kliptown Empyrean | https://api.audius.co/v1/tracks/G0wyE/stream?app_name=MixtapePro
+AUDIUS search synthwave -> 10 tracks
+ARCHIVE preset -> 40 items; first=csr049
+ARCHIVE tracks for csr049 -> 16; first=https://archive.org/download/csr049/csr049_wcwc_01-nick-chapman_take-me-now.mp3
