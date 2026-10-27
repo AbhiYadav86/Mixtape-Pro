@@ -1,0 +1,150 @@
+  No history is available.
+The input changes require a full rebuild for incremental task ':app:compileDebugUnitTestKotlin'.
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/kotlin', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/java', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/kotlin', not found
+Kotlin source files: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/java/com/example/ExampleRobolectricTest.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/java/com/example/LiveApiCheckTest.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/java/com/example/StudioDspTest.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/java/com/example/ExampleUnitTest.kt, /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/java/com/example/UiScreensTest.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /usr/lib/jvm/temurin-21-jdk-amd64
+Finished executing kotlin compiler using IN_PROCESS strategy
+Stored cache entry for task ':app:compileDebugUnitTestKotlin' with cache key ffb6ceb29acf44aa4ec3961876b81c3b
+Resolve mutations for :app:compileDebugUnitTestJavaWithJavac (Thread[#84,Execution worker Thread 2,5,main]) started.
+Resolve mutations for :app:processDebugUnitTestJavaRes (Thread[#82,included builds,5,main]) started.
+:app:processDebugUnitTestJavaRes (Thread[#82,included builds,5,main]) started.
+:app:compileDebugUnitTestJavaWithJavac (Thread[#84,Execution worker Thread 2,5,main]) started.
+
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+Skipping task ':app:compileDebugUnitTestJavaWithJavac' as it has no source files and no previous output files.
+
+> Task :app:processDebugUnitTestJavaRes
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/resources', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/resources', not found
+Caching disabled for task ':app:processDebugUnitTestJavaRes' because:
+  Caching has been disabled for the task
+Task ':app:processDebugUnitTestJavaRes' is not up-to-date because:
+  No history is available.
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/resources', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/resources', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/resources', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/resources', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/resources', not found
+Resolve mutations for :app:testDebugUnitTest (Thread[#84,Execution worker Thread 2,5,main]) started.
+:app:testDebugUnitTest (Thread[#82,included builds,5,main]) started.
+Gradle Test Executor 1 started executing tests.
+
+> Task :app:testDebugUnitTest
+Build cache key for task ':app:testDebugUnitTest' is 87c9caa7609e11503057ce464abb258d
+Task ':app:testDebugUnitTest' is not up-to-date because:
+  No history is available.
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/resources', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/generated/ksp/debugUnitTest/classes', not found
+file or directory '/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/intermediates/javac/debugUnitTest/compileDebugUnitTestJavaWithJavac/classes', not found
+Starting process 'Gradle Test Executor 1'. Working directory: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app Command: /usr/lib/jvm/temurin-21-jdk-amd64/bin/java -Djava.awt.headless=true -Djava.library.path=/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib:/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/testDebug/jniLibs:/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/src/test/jniLibs -Dorg.gradle.internal.worker.tmpdir=/home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/tmp/testDebugUnitTest/work --add-opens=java.base/java.io=ALL-UNNAMED @/home/runner/.gradle/.tmp/gradle-worker-classpath8018599433558821810txt -Xmx512m -Dfile.encoding=UTF-8 -Duser.country -Duser.language=en -Duser.variant -ea worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Test Executor 1'
+Successfully started process 'Gradle Test Executor 1'
+
+LiveApiCheckTest > liveApis STANDARD_OUT
+    ART    [Nickelback - Burn It to the Ground] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis11469353928929831347/com.mixtapepro.player-dataDir/files/artwork/art_test_-1891660041.jpg
+    LYRICS [Nickelback - Burn It to the Ground] -> 60 lines
+    ART    [Nickelback - When We Stand Together] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis11469353928929831347/com.mixtapepro.player-dataDir/files/artwork/art_test_-1326496848.jpg
+    LYRICS [Nickelback - When We Stand Together] -> 60 lines
+    ART    [Chris Isaak - Wicked Game] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis11469353928929831347/com.mixtapepro.player-dataDir/files/artwork/art_test_415990489.jpg
+    LYRICS [Chris Isaak - Wicked Game] -> 38 lines
+    ART    [The Righteous Brothers - You've Lost That Lovin' Feelin'] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis11469353928929831347/com.mixtapepro.player-dataDir/files/artwork/art_test_58216561.jpg
+    LYRICS [The Righteous Brothers - You've Lost That Lovin' Feelin'] -> 41 lines
+    ART    [Unknown Artist - Kenny Loggins - Playing With the Boys] -> file:///tmp/robolectric-LiveApiCheckTest_liveApis11469353928929831347/com.mixtapepro.player-dataDir/files/artwork/art_test_960008533.jpg
+    LYRICS [Unknown Artist - Kenny Loggins - Playing With the Boys] -> 50 lines
+    ART    [RAJIV DIXIT - Viruddh Bhojan kabhi na] -> NONE
+    LYRICS [RAJIV DIXIT - Viruddh Bhojan kabhi na] -> NONE
+    AUDIUS trending -> 100 tracks; first=Skrillex - Kliptown Empyrean | https://api.audius.co/v1/tracks/G0wyE/stream?app_name=MixtapePro
+    AUDIUS search synthwave -> 10 tracks
+    ARCHIVE preset -> 40 items; first=csr049
+    ARCHIVE tracks for csr049 -> 16; first=https://archive.org/download/csr049/csr049_wcwc_01-nick-chapman_take-me-now.mp3
+    RADIO  DEAD 302 text/html; charset=UTF-8 0KB 0ms  https://stream.dancewave.online/dance.mp3
+    RADIO  DEAD SSLException: Unsupported or unrecognized SSL message  https://icecast.walmradio.com:8000/classic
+    RADIO  OK   200 audio/mpeg 64KB 175ms  https://stream-relay-geo.ntslive.net/stream
+    RADIO  OK   200 audio/mpeg 63KB 131ms  https://ice5.somafm.com/indiepop-128-mp3
+    RADIO  OK   200 audio/mpeg 63KB 130ms  https://ice5.somafm.com/groovesalad-128-mp3
+    RADIO  OK   200 audio/mpeg 63KB 129ms  https://ice5.somafm.com/secretagent-128-mp3
+    RADIO  OK   200 audio/mpeg 63KB 129ms  https://ice5.somafm.com/dronezone-128-mp3
+    RADIO  OK   200 audio/mpeg 63KB 130ms  https://ice5.somafm.com/u80s-128-mp3
+    RADIO  OK   200 audio/mpeg 63KB 130ms  https://ice5.somafm.com/beatblender-128-mp3
+    RADIO  OK   200 audio/mpeg 63KB 130ms  https://ice5.somafm.com/defcon-128-mp3
+    RADIO  DEAD SocketException: Connection reset  https://stream.vante.me/chiptune.mp3
+    RADIO  OK   200 audio/mpeg 63KB 129ms  https://ice5.somafm.com/suburbsofgoa-128-mp3
+    RADIO  OK   200 audio/mpeg 63KB 130ms  https://ice5.somafm.com/poptron-128-mp3
+    RADIO  OK   200 audio/mpeg 63KB 130ms  https://ice5.somafm.com/lush-128-mp3
+    RADIO  OK   200 audio/mpeg 63KB 131ms  https://ice5.somafm.com/spacestation-128-mp3
+    RADIO  OK   200 audio/mpeg 63KB 129ms  https://ice5.somafm.com/cliqhop-128-mp3
+    RADIO  OK   200 audio/mpeg 63KB 129ms  https://ice5.somafm.com/covers-128-mp3
+    RADIO  OK   200 audio/mpeg 63KB 130ms  https://ice5.somafm.com/bootliquor-128-mp3
+    RADIO  OK   200 audio/mpeg 63KB 129ms  https://ice5.somafm.com/illstreet-128-mp3
+    RADIO  OK   200 audio/mpeg 63KB 130ms  https://ice5.somafm.com/fluid-128-mp3
+    RADIO  OK   200 audio/mpeg 63KB 130ms  https://ice5.somafm.com/missioncontrol-128-mp3
+
+Gradle Test Executor 1 finished executing tests.
+
+> Task :app:testDebugUnitTest
+Generating HTML test report...
+Finished generating test html results (0.03 secs) into: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/reports/tests/testDebugUnitTest
+Finished generating test XML results (0.004 secs) into: /home/runner/work/Mixtape-Pro/Mixtape-Pro/app/build/test-results/testDebugUnitTest
+Stored cache entry for task ':app:testDebugUnitTest' with cache key 87c9caa7609e11503057ce464abb258d
+Resolve mutations for :app:finalizeTestRoborazziDebug (Thread[#82,included builds,5,main]) started.
+:app:finalizeTestRoborazziDebug (Thread[#82,included builds,5,main]) started.
+
+> Task :app:finalizeTestRoborazziDebug SKIPPED
+Roborazzi: roborazziTestFinalizer.onlyIf doesRoborazziRun false
+Skipping task ':app:finalizeTestRoborazziDebug' as task onlyIf 'Task satisfies onlyIf spec' is false.
+Build dd22bcad-7aaf-4a17-87cd-627fb748d0ae is started
+AAPT2 aapt2-9.1.1-14792394-linux Daemon #0: shutdown
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1793090664340.json
+Build dd22bcad-7aaf-4a17-87cd-627fb748d0ae is closed
+
+See the complete report at file:///home/runner/work/Mixtape-Pro/Mixtape-Pro/build/reports/configuration-cache/93knkknr194zjn3csz0f1jari/4ybdhkmcny7jtrbsemcorrbmk/configuration-cache-report.html
+
+BUILD SUCCESSFUL in 1m 52s
+32 actionable tasks: 28 executed, 4 from cache
+Configuration cache entry stored.
