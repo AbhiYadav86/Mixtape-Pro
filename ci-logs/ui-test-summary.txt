@@ -1,0 +1,16 @@
+Calculating task graph as no cached configuration is available for tasks: :app:testDebugUnitTest --tests com.example.UiScreensTest
+> Task :app:preBuild UP-TO-DATE
+> Task :app:generateDebugAssets UP-TO-DATE
+--
+UiScreensTest > skinsGallery FAILED
+    androidx.test.espresso.AppNotIdleException at UiScreensTest.kt:55
+
+6 tests completed, 1 failed
+--
+> Task :app:testDebugUnitTest FAILED
+> Task :app:finalizeTestRoborazziDebug
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/uitest-1793091406141.json
+--
+BUILD FAILED in 1m 17s
+33 actionable tasks: 2 executed, 31 up-to-date
+Configuration cache entry stored.
