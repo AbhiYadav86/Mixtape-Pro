@@ -91,17 +91,18 @@ class LiveApiCheckTest {
                 val target = u.removePrefix("CANDIDATE ")
                 // follow redirects by hand (also https -> http), like the phone's player does
                 var url = java.net.URL(target)
-                var conn = url.openConnection() as java.net.HttpURLConnection
-                repeat(5) {
+                var conn: java.net.HttpURLConnection
+                var hops = 0
+                while (true) {
+                    conn = url.openConnection() as java.net.HttpURLConnection
                     conn.instanceFollowRedirects = false
                     conn.connectTimeout = 8000; conn.readTimeout = 8000
                     conn.setRequestProperty("User-Agent", "MixtapePro-RadioTuner/3.0 (Android)")
                     val c = conn.responseCode
-                    if (c in 300..399) {
-                        val loc = conn.getHeaderField("Location") ?: return@repeat
-                        url = java.net.URL(url, loc); conn.disconnect()
-                        conn = url.openConnection() as java.net.HttpURLConnection
-                    }
+                    val loc = conn.getHeaderField("Location")
+                    if (c in 300..399 && loc != null && hops < 5) {
+                        conn.disconnect(); url = java.net.URL(url, loc); hops++
+                    } else break
                 }
                 if (url.toString() != target) log("REDIRECT $target -> $url")
                 val code = conn.responseCode
