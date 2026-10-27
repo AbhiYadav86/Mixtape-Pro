@@ -73,13 +73,37 @@ class LiveApiCheckTest {
         val src = File("src/main/java/com/example/data/repository/MusicRepository.kt").readText()
         val urls = Regex("""uri = "(https?://[^"]+)"""").findAll(src).map { it.groupValues[1] }
             .filter { !it.contains("pixabay") }.distinct().toList()
-        for (u in urls) {
+        val candidates = listOf(
+            "http://stream.dancewave.online:8080/dance.mp3",
+            "https://stream.laut.fm/eurodance",
+            "https://stream.laut.fm/90s-eurodance",
+            "https://streams.90s90s.de/eurodance/mp3-192/",
+            "https://streams.90s90s.de/main/mp3-192/",
+            "https://0n-90s.radionetz.de/0n-90s.mp3",
+            "http://icecast.walmradio.com:8000/classic",
+            "https://icecast.walmradio.com:8443/classic",
+            "https://relay.rainwave.cc/chiptune.mp3",
+            "https://scenestream.io/necta128.mp3",
+            "https://radio.plaza.one/mp3"
+        )
+        for (u in urls + candidates.map { "CANDIDATE $it" }) {
             val line = try {
-                val conn = java.net.URL(u).openConnection() as java.net.HttpURLConnection
-                conn.connectTimeout = 8000; conn.readTimeout = 8000
-                conn.instanceFollowRedirects = true
-                conn.setRequestProperty("User-Agent", "MixtapePro-RadioTuner/3.0 (Android)")
-                conn.setRequestProperty("Icy-MetaData", "0")
+                val target = u.removePrefix("CANDIDATE ")
+                // follow redirects by hand (also https -> http), like the phone's player does
+                var url = java.net.URL(target)
+                var conn = url.openConnection() as java.net.HttpURLConnection
+                repeat(5) {
+                    conn.instanceFollowRedirects = false
+                    conn.connectTimeout = 8000; conn.readTimeout = 8000
+                    conn.setRequestProperty("User-Agent", "MixtapePro-RadioTuner/3.0 (Android)")
+                    val c = conn.responseCode
+                    if (c in 300..399) {
+                        val loc = conn.getHeaderField("Location") ?: return@repeat
+                        url = java.net.URL(url, loc); conn.disconnect()
+                        conn = url.openConnection() as java.net.HttpURLConnection
+                    }
+                }
+                if (url.toString() != target) log("REDIRECT $target -> $url")
                 val code = conn.responseCode
                 val type = conn.contentType ?: "?"
                 var bytes = 0
@@ -97,6 +121,7 @@ class LiveApiCheckTest {
                 "DEAD ${e.javaClass.simpleName}: ${e.message}"
             }
             log("RADIO  $line  $u")
+            if (u.startsWith("CANDIDATE")) Unit
         }
     }
 }
