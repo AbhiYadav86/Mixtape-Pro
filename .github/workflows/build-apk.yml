@@ -161,7 +161,7 @@ jobs:
           LIVE_API_CHECK: "1"
         run: |
           gradle :app:testDebugUnitTest --tests "com.example.LiveApiCheckTest" --no-daemon --console=plain -i 2>&1 | tee test.log || true
-          grep -E "^\s*(ART|LYRICS|AUDIUS|ARCHIVE)" test.log > summary.txt || true
+          grep -E "^\s*(ART|LYRICS|AUDIUS|ARCHIVE|RADIO)" test.log > summary.txt || true
           cat app/build/api-check.txt 2>/dev/null >> summary.txt || true
       - name: Publish API report to ci-logs branch
         if: always()

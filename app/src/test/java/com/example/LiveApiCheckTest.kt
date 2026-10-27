@@ -63,7 +63,40 @@ class LiveApiCheckTest {
                 log("ARCHIVE tracks for ${item.identifier} -> ${tracks.size}; first=${tracks.firstOrNull()?.uri}")
             }
         }
+        checkRadioStreams()
         File("build").mkdirs()
         File("build/api-check.txt").writeText(report.toString())
+    }
+
+    /** Connects to every radio station in the app and checks real audio comes back. */
+    private fun checkRadioStreams() {
+        val src = File("src/main/java/com/example/data/repository/MusicRepository.kt").readText()
+        val urls = Regex("""uri = "(https?://[^"]+)"""").findAll(src).map { it.groupValues[1] }
+            .filter { !it.contains("pixabay") }.distinct().toList()
+        for (u in urls) {
+            val line = try {
+                val conn = java.net.URL(u).openConnection() as java.net.HttpURLConnection
+                conn.connectTimeout = 8000; conn.readTimeout = 8000
+                conn.instanceFollowRedirects = true
+                conn.setRequestProperty("User-Agent", "MixtapePro-RadioTuner/3.0 (Android)")
+                conn.setRequestProperty("Icy-MetaData", "0")
+                val code = conn.responseCode
+                val type = conn.contentType ?: "?"
+                var bytes = 0
+                val t0 = System.currentTimeMillis()
+                if (code in 200..299) conn.inputStream.use { ins ->
+                    val buf = ByteArray(8192)
+                    while (bytes < 64_000 && System.currentTimeMillis() - t0 < 6000) {
+                        val n = ins.read(buf); if (n < 0) break; bytes += n
+                    }
+                }
+                conn.disconnect()
+                val ok = code in 200..299 && type.startsWith("audio") && bytes >= 16_000
+                "${if (ok) "OK  " else "DEAD"} $code $type ${bytes / 1024}KB ${System.currentTimeMillis() - t0}ms"
+            } catch (e: Exception) {
+                "DEAD ${e.javaClass.simpleName}: ${e.message}"
+            }
+            log("RADIO  $line  $u")
+        }
     }
 }

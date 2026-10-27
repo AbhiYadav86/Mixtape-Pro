@@ -52,6 +52,8 @@ fun RetroSeekBar(
     val safeDuration = durationMs.coerceAtLeast(1L)
     val progressFraction = if (isDragging) {
         dragFraction
+    } else if (durationMs <= 0L) {
+        0f // live stream: no length, so the bar stays at the start
     } else {
         (currentPositionMs.toFloat() / safeDuration).coerceIn(0f, 1f)
     }
@@ -127,7 +129,7 @@ fun RetroSeekBar(
             }
 
             Text(
-                text = formatTime(durationMs),
+                text = if (durationMs <= 0L) "LIVE" else formatTime(durationMs),
                 fontSize = timeFontSize,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,

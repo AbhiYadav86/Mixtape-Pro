@@ -57,6 +57,33 @@ class RetroAudioPlayerEngine(
     private val _isBuffering = MutableStateFlow(false)
     val isBuffering: StateFlow<Boolean> = _isBuffering.asStateFlow()
 
+    /** Set when a stream or file can't be played (shown to the user, then cleared). */
+    private val _playbackError = MutableStateFlow<String?>(null)
+    val playbackError: StateFlow<String?> = _playbackError.asStateFlow()
+    fun clearPlaybackError() { _playbackError.value = null }
+
+    /** Stop and say so, instead of faking playback with the synth. */
+    private fun failPlayback(song: Song, reason: String) {
+        val old = mediaPlayer
+        mediaPlayer = null
+        safelyReleasePlayer(old)
+        progressJob?.cancel()
+        playerState = PlayerState.ERROR
+        _isBuffering.value = false
+        _isPlaying.value = false
+        _currentPositionMs.value = 0L
+        visualizerEngine.setPlaybackActive(false)
+        releaseWakeLock()
+        RetroAudioPlaybackService.startOrUpdateService(context, song, false)
+        _playbackError.value = reason
+    }
+
+    private fun failureText(song: Song) = when (song.source) {
+        AudioSource.RADIO_STREAM -> "\"${song.title}\" isn't broadcasting right now. Try another station."
+        AudioSource.LOCAL -> "Couldn't play \"${song.title}\". The file may be missing or in an unsupported format."
+        else -> "Couldn't connect to \"${song.title}\". Check your internet connection and try again."
+    }
+
     private val _currentPositionMs = MutableStateFlow(0L)
     val currentPositionMs: StateFlow<Long> = _currentPositionMs.asStateFlow()
 
@@ -315,8 +342,10 @@ class RetroAudioPlayerEngine(
         autoPlayWhenPrepared = true
         _isBuffering.value = true
         _isPlaying.value = false
+        _playbackError.value = null
         _currentPositionMs.value = 0L
-        _durationMs.value = if (song.durationMs > 0) song.durationMs else 0L
+        // Live radio has no length; showing a made-up 3:30 made stations look like songs
+        _durationMs.value = if (song.durationMs > 0 && song.source != AudioSource.RADIO_STREAM) song.durationMs else 0L
 
         // If track is an offline demo, synthesizer URI, or invalid URL, fallback to real-time retro PCM synth immediately
         if (song.uri.isBlank() || song.uri.contains(".invalid") || song.uri.startsWith("synth://") || song.uri.startsWith("offline://")) {
@@ -353,7 +382,11 @@ class RetroAudioPlayerEngine(
                             playerState = PlayerState.PREPARED
                             _isBuffering.value = false
                             val dur = try { player.duration.toLong() } catch (e: Exception) { 0L }
-                            _durationMs.value = if (dur > 0) dur else song.durationMs
+                            _durationMs.value = when {
+                                dur > 0 -> dur
+                                song.source == AudioSource.RADIO_STREAM -> 0L
+                                else -> song.durationMs
+                            }
 
                             applyPlaybackParams()
 
@@ -369,8 +402,7 @@ class RetroAudioPlayerEngine(
                                 } catch (e: Exception) {
                                     safelyReleasePlayer(player)
                                     mediaPlayer = null
-                                    playerState = PlayerState.ERROR
-                                    startSyntheticPlayback(song)
+                                    failPlayback(song, failureText(song))
                                 }
                             } else {
                                 playerState = PlayerState.PAUSED
@@ -392,12 +424,24 @@ class RetroAudioPlayerEngine(
                             if (mediaPlayer == player) {
                                 mediaPlayer = null
                             }
-                            _isBuffering.value = false
-                            _isPlaying.value = false
-                            playerState = PlayerState.ERROR
-                            visualizerEngine.setPlaybackActive(false)
-                            RetroAudioPlaybackService.startOrUpdateService(context, song, false)
-                            startSyntheticPlayback(song)
+                            failPlayback(song, failureText(song))
+                        }
+                        true
+                    }
+
+                    // A stream that stalls mid-play: show buffering and freeze the visualiser until audio returns
+                    setOnInfoListener { _, what, _ ->
+                        scope.launch(Dispatchers.Main) {
+                            when (what) {
+                                MediaPlayer.MEDIA_INFO_BUFFERING_START -> {
+                                    _isBuffering.value = true
+                                    visualizerEngine.setPlaybackActive(false)
+                                }
+                                MediaPlayer.MEDIA_INFO_BUFFERING_END -> {
+                                    _isBuffering.value = false
+                                    if (_isPlaying.value) visualizerEngine.setPlaybackActive(true)
+                                }
+                            }
                         }
                         true
                     }
@@ -417,24 +461,22 @@ class RetroAudioPlayerEngine(
                     }
                 }
 
-                // If streaming track does not finish preparing within 2.5 seconds (network delay or offline), fallback to PCM synth
-                delay(2500L)
+                // Radio stations can take a while to connect: wait up to 20 s ("Tuning in…"), then give up
+                // honestly. (Older builds switched to the built-in synth after 2.5 s, which looked like
+                // playback with no sound.)
+                delay(20_000L)
                 if (isActive && playerState == PlayerState.PREPARING) {
                     withContext(Dispatchers.Main) {
                         if (playerState == PlayerState.PREPARING) {
-                            safelyReleasePlayer(mp)
-                            mediaPlayer = null
-                            startSyntheticPlayback(song)
+                            failPlayback(song, failureText(song))
                         }
                     }
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    safelyReleasePlayer(mp)
-                    mediaPlayer = null
-                    playerState = PlayerState.ERROR
-                    _isBuffering.value = false
-                    startSyntheticPlayback(song)
+                    failPlayback(song, failureText(song))
                 }
             }
         }

@@ -71,7 +71,7 @@ fun RetroDigitalDisplay(
     }
 
     val totalDurationFormatted = remember(durationMs) {
-        if (durationMs <= 0) "--:--"
+        if (durationMs <= 0) "LIVE"
         else {
             val totalSecs = (durationMs / 1000).coerceAtLeast(0)
             val mins = totalSecs / 60
@@ -280,16 +280,21 @@ fun RetroDigitalDisplay(
                         }
                         .padding(horizontal = 8.dp, vertical = 5.dp)
                 ) {
-                    val timerFontSize = (scale.timerFontSize * 0.74f * (scaleFactor / scale.factor)).coerceIn(22f, 30f).sp
+                    // The digits ignore the phone's text-size setting so MM:SS always fits
+                    val fontScaleNow = androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)
+                    val timerFontSize = ((scale.timerFontSize * 0.74f * (scaleFactor / scale.factor)).coerceIn(22f, 30f) / fontScaleNow).sp
                     val totalLabelSize = if (scale == PlayerUiScale.COMPACT) 10.5.sp else 12.sp
                     val trackTimeLabelSize = if (scale == PlayerUiScale.COMPACT) 10.sp else 11.5.sp
 
+                    // Labels take what's left after the digits (weight), so they shrink instead of the time
                     Column(
                         horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text(
                             text = if (showRemainingTime) "REMAINING" else "TRACK TIME",
+                            overflow = TextOverflow.Ellipsis,
                             color = skin.accentColor,
                             fontSize = trackTimeLabelSize,
                             fontWeight = FontWeight.Bold,
@@ -298,6 +303,7 @@ fun RetroDigitalDisplay(
                         )
                         Text(
                             text = "TOTAL $totalDurationFormatted",
+                            overflow = TextOverflow.Ellipsis,
                             color = skin.lcdTextColor.copy(alpha = 0.65f),
                             fontSize = totalLabelSize,
                             fontWeight = FontWeight.Bold,
@@ -372,7 +378,7 @@ fun RetroDigitalDisplay(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(3.dp),
                     // Badges get a fixed maximum width so long genres can never squeeze the timer
-                    modifier = Modifier.widthIn(max = 92.dp)
+                    modifier = Modifier.widthIn(max = 84.dp)
                 ) {
                     Box(
                         modifier = Modifier

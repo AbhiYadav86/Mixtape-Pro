@@ -139,4 +139,15 @@ class UiScreensTest {
         }
         compose.onRoot().captureRoboImage("$dir/lyrics-overlay.png")
     }
+
+    @Test fun photoDecks() {
+        show {
+            androidx.compose.foundation.layout.Column {
+                Box(Modifier.fillMaxWidth().height(300.dp)) { com.example.ui.components.deck.PhotoVinylView(song = null, isPlaying = true) }
+                Box(Modifier.fillMaxWidth().height(300.dp)) { com.example.ui.components.deck.PhotoCdView(song = null, isPlaying = true) }
+                Box(Modifier.fillMaxWidth().height(300.dp)) { com.example.ui.components.deck.PhotoTapeView(isPlaying = false) }
+            }
+        }
+        compose.onRoot().captureRoboImage("$dir/decks.png")
+    }
 }

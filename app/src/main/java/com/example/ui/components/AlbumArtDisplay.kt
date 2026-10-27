@@ -27,9 +27,9 @@ import coil.compose.AsyncImage
 import com.example.data.model.DiscDisplayMode
 import com.example.data.model.RetroSkin
 import com.example.data.model.Song
-import com.example.ui.components.deck.RealisticCassetteView
-import com.example.ui.components.deck.RealisticCdView
-import com.example.ui.components.deck.RealisticVinylView
+import com.example.ui.components.deck.PhotoCdView
+import com.example.ui.components.deck.PhotoTapeView
+import com.example.ui.components.deck.PhotoVinylView
 
 @Composable
 fun AlbumArtDisplay(
@@ -86,32 +86,9 @@ fun AlbumArtDisplay(
             contentAlignment = Alignment.Center
         ) {
             when (displayMode) {
-                DiscDisplayMode.CD_JEWEL_CASE -> {
-                    RealisticCdView(
-                        song = song,
-                        rotation = rotation,
-                        isPlaying = isPlaying,
-                        deckHeight = availableDeckHeight
-                    )
-                }
-                DiscDisplayMode.CASSETTE_TAPE -> {
-                    RealisticCassetteView(
-                        song = song,
-                        rotation = rotation,
-                        isPlaying = isPlaying,
-                        playbackProgress = playbackProgress,
-                        deckHeight = availableDeckHeight
-                    )
-                }
-                DiscDisplayMode.VINYL_RECORD -> {
-                    RealisticVinylView(
-                        song = song,
-                        rotation = rotation,
-                        isPlaying = isPlaying,
-                        playbackProgress = playbackProgress,
-                        deckHeight = availableDeckHeight
-                    )
-                }
+                DiscDisplayMode.CD_JEWEL_CASE -> PhotoCdView(song = song, isPlaying = isPlaying)
+                DiscDisplayMode.CASSETTE_TAPE -> PhotoTapeView(isPlaying = isPlaying)
+                DiscDisplayMode.VINYL_RECORD -> PhotoVinylView(song = song, isPlaying = isPlaying)
                 DiscDisplayMode.CRT_MONITOR -> {
                     CrtMonitorView(song = song, onArtworkMissing = onArtworkMissing)
                 }

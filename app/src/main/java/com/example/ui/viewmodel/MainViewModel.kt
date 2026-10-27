@@ -146,6 +146,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
         }
 
+        // A station or track that can't be played: say so (the engine no longer fakes it with the synth)
+        viewModelScope.launch {
+            playerEngine.playbackError.collect { msg ->
+                if (msg != null) {
+                    _statusMessage.value = msg
+                    playerEngine.clearPlaybackError()
+                }
+            }
+        }
+
         // Auto-show lyrics where the spectrum analyzer is, as soon as a track has them
         viewModelScope.launch {
             combine(

@@ -499,10 +499,10 @@ fun PlayerScreen(
                                                     )
 
                                                     listOf(
-                                                        DiscDisplayMode.CD_JEWEL_CASE to "CD Jewel Case (Spinning Disc)",
-                                                        DiscDisplayMode.CASSETTE_TAPE to "Cassette Tape (Dual Spool)",
-                                                        DiscDisplayMode.VINYL_RECORD to "Vinyl Record (Turntable Deck)",
-                                                        DiscDisplayMode.CRT_MONITOR to "Album Artwork (High-Res Cover)"
+                                                        DiscDisplayMode.CD_JEWEL_CASE to "CD (spinning disc)",
+                                                        DiscDisplayMode.CASSETTE_TAPE to "Cassette tape (close-up)",
+                                                        DiscDisplayMode.VINYL_RECORD to "Vinyl record (turntable)",
+                                                        DiscDisplayMode.CRT_MONITOR to "Album art"
                                                     ).forEach { (mode, label) ->
                                                         val isSelected = discDisplayMode == mode
                                                         Row(
