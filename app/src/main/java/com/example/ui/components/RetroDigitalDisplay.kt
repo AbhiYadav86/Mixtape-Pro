@@ -92,7 +92,6 @@ fun RetroDigitalDisplay(
     val dynamicPaddingH = (11 * (scaleFactor / scale.factor).coerceIn(0.85f, 1.25f)).dp
     val dynamicPaddingV = if (scale == PlayerUiScale.COMPACT) 4.dp else (6.5f * (scaleFactor / scale.factor).coerceIn(0.85f, 1.2f)).dp
 
-    val ghostColor = skin.lcdDimColor.copy(alpha = 0.15f)
 
     Box(
         modifier = modifier
@@ -242,7 +241,7 @@ fun RetroDigitalDisplay(
                 if (albumLine.isNotBlank()) {
                     Text(
                         text = albumLine,
-                        color = skin.buttonIconColor.copy(alpha = 0.9f),
+                        color = skin.lcdTextColor.copy(alpha = 0.7f),
                         fontSize = (13f * (scaleFactor / scale.factor)).coerceIn(11.5f, 15f).sp,
                         fontWeight = FontWeight.SemiBold,
                         fontFamily = FontFamily.SansSerif,
@@ -321,15 +320,6 @@ fun RetroDigitalDisplay(
                             modifier = Modifier.width((timerFontSize.value * 0.38f).dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "-",
-                                color = ghostColor,
-                                fontSize = timerFontSize,
-                                fontWeight = FontWeight.Black,
-                                fontFamily = FontFamily.Monospace,
-                                softWrap = false,
-                                maxLines = 1
-                            )
                             if (showRemainingTime) {
                                 Text(
                                     text = "-",
@@ -345,18 +335,6 @@ fun RetroDigitalDisplay(
 
                         // Fixed MM:SS Digits Block (Never shifts or truncates)
                         Box(contentAlignment = Alignment.CenterStart) {
-                            // 88:88 Unlit Segment Ghost Background
-                            Text(
-                                text = "88:88",
-                                color = ghostColor,
-                                fontSize = timerFontSize,
-                                fontWeight = FontWeight.Black,
-                                fontFamily = FontFamily.Monospace,
-                                letterSpacing = 0.5.sp,
-                                softWrap = false,
-                                maxLines = 1
-                            )
-
                             Text(
                                 text = digitsFormatted,
                                 color = skin.lcdTextColor,
