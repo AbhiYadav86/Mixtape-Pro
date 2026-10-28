@@ -91,6 +91,13 @@ fun RadioScreen(
             "2000s" -> radioStations.filter { (it.year?.toIntOrNull() ?: 0) >= 2000 || it.genre.contains("2000") || it.title.contains("2000") }
             "90s" -> radioStations.filter { (it.year?.toIntOrNull() ?: 0) < 2000 || it.genre.contains("90s") || it.title.contains("90s") }
             else -> radioStations
+        }.sortedBy { station ->
+            // on-air stations first, then ones still being checked, then off-air
+            when (stationStatusMap[station.id]?.state) {
+                StationLiveState.LIVE, null -> 0
+                StationLiveState.CHECKING -> 1
+                else -> 2
+            }
         }
     }
 

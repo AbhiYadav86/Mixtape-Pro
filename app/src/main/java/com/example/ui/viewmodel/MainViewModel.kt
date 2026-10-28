@@ -181,7 +181,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val isOfflineDummy = station.id == "radio_pirate_cassette_standby" || station.uri.contains("offline-archive.invalid") || station.uri.startsWith("synth://")
                 station.id to RadioStationStatus(
                     stationId = station.id,
-                    state = if (isOfflineDummy) StationLiveState.OFFLINE else StationLiveState.LIVE,
+                    state = if (isOfflineDummy) StationLiveState.OFFLINE else StationLiveState.CHECKING,
                     pingMs = if (isOfflineDummy) 0L else 42L,
                     signalPercent = if (isOfflineDummy) 0 else 96,
                     listenerCount = if (isOfflineDummy) 0 else repository.getEstimatedListenersForStation(station.id),
@@ -245,7 +245,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }.forEach { it.await() }
             }
 
+            // If every internet station failed, the phone is most likely offline rather than
+            // every station being down: say so instead of silently listing them all as dead.
+            val streams = stations.filter { it.uri.startsWith("http") }
+            val live = streams.count { _stationStatusMap.value[it.id]?.state == StationLiveState.LIVE }
+            if (streams.isNotEmpty()) {
+                _statusMessage.value = if (live == 0)
+                    "No internet connection: radio stations couldn't be checked"
+                else if (force) "Radio check: $live of ${streams.size} stations on air" else null
+            }
+
             _isScanningFrequencies.value = false
+        }
+    }
+
+    /** Plays a radio station, re-testing it first if the launch check found it off air. */
+    fun playRadioStation(station: Song) {
+        val state = _stationStatusMap.value[station.id]?.state
+        if (station.uri.startsWith("http") && state == StationLiveState.OFFLINE) {
+            viewModelScope.launch {
+                _statusMessage.value = "Re-tuning ${station.title}…"
+                _stationStatusMap.update { map ->
+                    map[station.id]?.let { map + (station.id to it.copy(state = StationLiveState.CHECKING)) } ?: map
+                }
+                val status = repository.checkStationLiveStatus(station)
+                _stationStatusMap.update { it + (station.id to status) }
+                if (status.state == StationLiveState.LIVE) playSong(station)
+                else _statusMessage.value = "${station.title} is off air right now. Try another station."
+            }
+        } else {
+            playSong(station)
         }
     }
 

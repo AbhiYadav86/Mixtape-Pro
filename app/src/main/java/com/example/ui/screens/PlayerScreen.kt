@@ -690,7 +690,7 @@ fun PlayerScreen(
                                         currentSong = currentSong,
                                         isPlaying = isPlaying,
                                         skin = skin,
-                                        onPlaySong = { song -> viewModel.playSong(song) },
+                                        onPlaySong = { song -> if (song.source == com.example.data.model.AudioSource.RADIO_STREAM) viewModel.playRadioStation(song) else viewModel.playSong(song) },
                                         onSearchOnline = { query -> viewModel.searchOnline(query) },
                                         onSaveToLibrary = { song -> viewModel.saveOnlineSongToLibrary(song) },
                                         onScanFrequencies = { viewModel.scanRadioStationsLiveStatus(force = true) },

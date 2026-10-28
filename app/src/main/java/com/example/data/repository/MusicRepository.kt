@@ -486,26 +486,10 @@ class MusicRepository(
             )
         }
 
-        try {
-            val url = java.net.URL(station.uri)
-            val connection = url.openConnection() as java.net.HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.setRequestProperty("User-Agent", "MixtapePro-RadioTuner/3.0 (Android)")
-            connection.setRequestProperty("Range", "bytes=0-1024")
-            connection.connectTimeout = 2800
-            connection.readTimeout = 2800
-            connection.instanceFollowRedirects = true
-
-            val code = connection.responseCode
-            responseLatency = (System.currentTimeMillis() - t0).coerceAtLeast(18L)
-            if (code in 200..399) {
-                isLive = true
-            }
-            connection.disconnect()
-        } catch (e: Exception) {
-            responseLatency = (System.currentTimeMillis() - t0).coerceAtLeast(120L)
-            isLive = false
-        }
+        // A station counts as live only if it really streams audio the player can open:
+        // first try, then one retry so a slow mobile network doesn't mark it dead.
+        isLive = probeStream(station.uri) || probeStream(station.uri)
+        responseLatency = (System.currentTimeMillis() - t0).coerceAtLeast(18L)
 
         val state = if (isLive) StationLiveState.LIVE else StationLiveState.OFFLINE
         val signalPercent = if (isLive) {
@@ -528,6 +512,57 @@ class MusicRepository(
             isLiveStream = isLive,
             lastChecked = System.currentTimeMillis()
         )
+    }
+
+    /**
+     * Opens the stream the way the player will and reads the first few KB of audio.
+     * Redirects are followed by hand so an https -> http hop (which Android's MediaPlayer
+     * refuses) counts as dead instead of looking fine.
+     */
+    private fun probeStream(startUrl: String): Boolean {
+        if (!startUrl.startsWith("http")) return false
+        var url = startUrl
+        repeat(5) {
+            var conn: java.net.HttpURLConnection? = null
+            try {
+                conn = (java.net.URL(url).openConnection() as java.net.HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    instanceFollowRedirects = false
+                    connectTimeout = 5000
+                    readTimeout = 5000
+                    setRequestProperty("User-Agent", "MixtapePro-RadioTuner/3.0 (Android)")
+                    setRequestProperty("Icy-MetaData", "0")
+                }
+                val code = conn.responseCode
+                if (code in 300..399) {
+                    val next = conn.getHeaderField("Location") ?: return false
+                    val resolved = java.net.URL(java.net.URL(url), next).toString()
+                    if (url.startsWith("https:") && resolved.startsWith("http:")) return false
+                    url = resolved
+                    return@repeat
+                }
+                if (code != 200) return false
+                val type = (conn.contentType ?: "").lowercase()
+                if (type.startsWith("text/html") || type.startsWith("application/json")) return false
+                // Must actually deliver audio bytes within the timeout
+                val buf = ByteArray(4096)
+                var total = 0
+                val deadline = System.currentTimeMillis() + 6000
+                conn.inputStream.use { input ->
+                    while (total < 8 * 1024 && System.currentTimeMillis() < deadline) {
+                        val n = input.read(buf)
+                        if (n <= 0) break
+                        total += n
+                    }
+                }
+                return total >= 8 * 1024
+            } catch (e: Exception) {
+                return false
+            } finally {
+                conn?.disconnect()
+            }
+        }
+        return false
     }
 
     // 90s and 2000s Live Retro Radio Stations
