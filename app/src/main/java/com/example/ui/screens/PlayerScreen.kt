@@ -499,9 +499,9 @@ fun PlayerScreen(
                                                     )
 
                                                     listOf(
-                                                        DiscDisplayMode.CD_JEWEL_CASE to "CD (spinning disc)",
+                                                        DiscDisplayMode.CD_JEWEL_CASE to "CD (burned mix)",
                                                         DiscDisplayMode.CASSETTE_TAPE to "Cassette tape (close-up)",
-                                                        DiscDisplayMode.VINYL_RECORD to "Vinyl record (turntable)",
+                                                        DiscDisplayMode.VINYL_RECORD to "Vinyl record (12-inch)",
                                                         DiscDisplayMode.CRT_MONITOR to "Album art"
                                                     ).forEach { (mode, label) ->
                                                         val isSelected = discDisplayMode == mode
