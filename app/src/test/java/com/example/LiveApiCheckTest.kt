@@ -73,7 +73,17 @@ class LiveApiCheckTest {
         val src = File("src/main/java/com/example/data/repository/MusicRepository.kt").readText()
         val urls = Regex("""uri = "(https?://[^"]+)"""").findAll(src).map { it.groupValues[1] }
             .filter { !it.contains("pixabay") }.distinct().toList()
-        val candidates = emptyList<String>()
+        val candidates = listOf(
+            "https://live.powerhitz.com/1power",
+            "https://live.powerhitz.com/hitlist",
+            "https://listen.181fm.com/181-power_128k.mp3",
+            "https://listen.181fm.com/181-thebox_128k.mp3",
+            "https://listen.181fm.com/181-uktop40_128k.mp3",
+            "https://stream.revma.ihrhls.com/zc185",
+            "https://playerservices.streamtheworld.com/api/livestream-redirect/KIISFM.mp3",
+            "https://icecast.omroep.nl/funx-hiphop-bb-mp3",
+            "https://stream.zeno.fm/0r0xa792kwzuv"
+        )
         for (u in urls + candidates.map { "CANDIDATE $it" }) {
             val line = try {
                 val target = u.removePrefix("CANDIDATE ")

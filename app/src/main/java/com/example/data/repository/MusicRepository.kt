@@ -946,21 +946,6 @@ class MusicRepository(
                 sampleRateKhz = 44
             ),
             Song(
-                id = "radio_now_triplej",
-                title = "triple j",
-                artist = "ABC (Australia)",
-                album = "New Alternative & Indie",
-                durationMs = 0L,
-                uri = "https://live-radio01.mediahubaustralia.com/2TJW/mp3/",
-                albumArtUri = "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=600&auto=format&fit=crop&q=80",
-                albumArtRes = R.drawable.img_cd_jewel_case,
-                source = AudioSource.RADIO_STREAM,
-                genre = "Contemporary / Alt Rock",
-                year = "2025",
-                bitrateKbps = 128,
-                sampleRateKhz = 44
-            ),
-            Song(
                 id = "radio_now_fm4",
                 title = "FM4",
                 artist = "ORF (Austria)",
