@@ -473,7 +473,7 @@ private fun QuickSongRow(
                             color = Color(0xFF10B981)
                         )
                     }
-                    val hasArt = !song.albumArtUri.isNullOrBlank() && !song.albumArtUri.contains("unsplash")
+                    val hasArt = song.displayArtUri != null
                     if (hasArt) {
                         Text(
                             text = " ART",

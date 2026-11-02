@@ -162,8 +162,8 @@ private fun CrtMonitorView(song: Song?, onArtworkMissing: (Song) -> Unit) {
 
 @Composable
 private fun RenderAlbumImage(song: Song?, onArtworkMissing: (Song) -> Unit = {}) {
-    val rawArtUri = song?.albumArtUri
-    val hasValidArtUri = !rawArtUri.isNullOrBlank() && !rawArtUri.contains("unsplash", ignoreCase = true)
+    val rawArtUri = song?.displayArtUri
+    val hasValidArtUri = rawArtUri != null
 
     var loadFailed by remember(song?.id, rawArtUri) { mutableStateOf(!hasValidArtUri) }
 

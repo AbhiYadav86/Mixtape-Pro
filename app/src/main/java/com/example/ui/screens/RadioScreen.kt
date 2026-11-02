@@ -88,7 +88,8 @@ fun RadioScreen(
                 val status = stationStatusMap[station.id]
                 status?.state == StationLiveState.OFFLINE || (status == null && (station.id == "radio_pirate_cassette_standby" || station.uri.contains("offline-archive.invalid")))
             }
-            "2000s" -> radioStations.filter { (it.year?.toIntOrNull() ?: 0) >= 2000 || it.genre.contains("2000") || it.title.contains("2000") }
+            "2000s" -> radioStations.filter { (it.year?.toIntOrNull() ?: 0) in 2000..2009 || it.genre.contains("2000") || it.title.contains("2000") }
+            "NOW" -> radioStations.filter { (it.year?.toIntOrNull() ?: 0) >= 2010 || it.genre.startsWith("Contemporary") }
             "90s" -> radioStations.filter { (it.year?.toIntOrNull() ?: 0) < 2000 || it.genre.contains("90s") || it.title.contains("90s") }
             else -> radioStations
         }.sortedBy { station ->
@@ -315,15 +316,16 @@ fun RadioScreen(
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Indented Row below Live and Offline for 90's and 2000's Radio Stations
+            // Era filters: 90s, 2000s and today's stations
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 listOf(
-                    "90s" to "90s stations",
-                    "2000s" to "2000s stations"
+                    "90s" to "90s",
+                    "2000s" to "2000s",
+                    "NOW" to "Contemporary"
                 ).forEach { (eraKey, label) ->
                     val isSelected = selectedStatusFilter == eraKey
                     Box(

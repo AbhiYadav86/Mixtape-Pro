@@ -383,8 +383,8 @@ class RetroAudioPlayerEngine(
                             _isBuffering.value = false
                             val dur = try { player.duration.toLong() } catch (e: Exception) { 0L }
                             _durationMs.value = when {
-                                dur > 0 -> dur
                                 song.source == AudioSource.RADIO_STREAM -> 0L
+                                dur > 0 -> dur
                                 else -> song.durationMs
                             }
 
@@ -721,7 +721,7 @@ class RetroAudioPlayerEngine(
                             val pos = mp.currentPosition.toLong()
                             val dur = mp.duration.toLong()
                             _currentPositionMs.value = pos
-                            if (dur > 0) _durationMs.value = dur
+                            if (dur > 0 && _currentSong.value?.source != AudioSource.RADIO_STREAM) _durationMs.value = dur
 
                             // Handle DJ crossfade volume automation
                             if (cfSecs > 0 && dur > 10000L) {

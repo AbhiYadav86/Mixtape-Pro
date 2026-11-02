@@ -30,7 +30,16 @@ data class Song(
     val addedTimestamp: Long = System.currentTimeMillis(),
     val playCount: Int = 0,
     val lyrics: String? = null
-) : Serializable
+) : Serializable {
+    /**
+     * The artwork to show for this song, or null. Old stock-photo placeholders on tracks are
+     * ignored, but a radio station's photo is its real artwork.
+     */
+    val displayArtUri: String?
+        get() = albumArtUri?.takeIf {
+            it.isNotBlank() && (source == AudioSource.RADIO_STREAM || !it.contains("images.unsplash.com", ignoreCase = true))
+        }
+}
 
 data class Playlist(
     val id: String,

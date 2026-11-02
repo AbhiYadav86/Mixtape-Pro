@@ -55,7 +55,7 @@ fun SongArtThumbnail(
 ) {
     val shape = RoundedCornerShape(8.dp)
     var failed by remember(song.id, song.albumArtUri) { mutableStateOf(false) }
-    val hasArt = isRealArtworkUri(song.albumArtUri) && !failed
+    val hasArt = song.displayArtUri != null && !failed
 
     Box(
         modifier = modifier

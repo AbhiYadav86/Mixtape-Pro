@@ -8,12 +8,25 @@ import android.media.AudioManager
 import android.media.MediaMetadata
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.example.MainActivity
 import com.example.R
+import com.example.data.model.AudioSource
+import com.example.data.model.BuiltInArt
+import com.example.data.model.DiscDisplayMode
 import com.example.data.model.Song
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class RetroAudioPlaybackService : Service() {
 
@@ -30,8 +43,23 @@ class RetroAudioPlaybackService : Service() {
         const val ACTION_STOP = "com.example.action.STOP"
         const val ACTION_VOLUME_UP = "com.example.action.VOLUME_UP"
         const val ACTION_VOLUME_DOWN = "com.example.action.VOLUME_DOWN"
+        const val ACTION_REFRESH_ART = "com.example.action.REFRESH_ART"
 
         var activeEngine: RetroAudioPlayerEngine? = null
+
+        /** What the player's deck is showing; the lock screen / media controls show the same picture. */
+        @Volatile var artMode: DiscDisplayMode = DiscDisplayMode.CRT_MONITOR
+        @Volatile private var running = false
+
+        /** Called when the deck view changes, so the media controls follow it. */
+        fun setArtMode(context: Context, mode: DiscDisplayMode) {
+            if (artMode == mode) return
+            artMode = mode
+            if (!running) return
+            try {
+                context.startService(Intent(context, RetroAudioPlaybackService::class.java).apply { action = ACTION_REFRESH_ART })
+            } catch (ignored: Exception) {}
+        }
 
         fun startOrUpdateService(context: Context, song: Song?, isPlaying: Boolean) {
             try {
@@ -62,10 +90,19 @@ class RetroAudioPlaybackService : Service() {
     private var mediaSession: MediaSession? = null
     private var audioManager: AudioManager? = null
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var artJob: Job? = null
+    private var artKey: String? = null
+    private var artBitmap: Bitmap? = null
+    private var lastTitle = "Mixtape Pro"
+    private var lastArtist = "Retro Audio"
+    private var lastPlaying = false
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
+        running = true
         audioManager = getSystemService(Context.AUDIO_SERVICE) as? AudioManager
         createNotificationChannel()
         setupMediaSession()
@@ -124,6 +161,10 @@ class RetroAudioPlaybackService : Service() {
                 updateMediaSessionState(title, artist, isPlaying)
                 startForegroundWithNotification(title, artist, isPlaying)
             }
+            ACTION_REFRESH_ART -> {
+                updateMediaSessionState(lastTitle, lastArtist, lastPlaying)
+                startForegroundWithNotification(lastTitle, lastArtist, lastPlaying)
+            }
             ACTION_NEXT -> {
                 activeEngine?.nextTrack()
             }
@@ -158,36 +199,88 @@ class RetroAudioPlaybackService : Service() {
     }
 
     private fun updateMediaSessionState(title: String, artist: String, isPlaying: Boolean) {
+        lastTitle = title; lastArtist = artist; lastPlaying = isPlaying
         try {
             val session = mediaSession ?: return
+            val song = activeEngine?.currentSong?.value
+            val isLive = song?.source == AudioSource.RADIO_STREAM
             val state = if (isPlaying) PlaybackState.STATE_PLAYING else PlaybackState.STATE_PAUSED
-            val position = activeEngine?.currentPositionMs?.value ?: 0L
-            val duration = activeEngine?.durationMs?.value ?: 0L
+            val position = if (isLive) PlaybackState.PLAYBACK_POSITION_UNKNOWN else activeEngine?.currentPositionMs?.value ?: 0L
+            val duration = if (isLive) 0L else activeEngine?.durationMs?.value ?: 0L
 
-            val playbackState = PlaybackState.Builder()
-                .setActions(
-                    PlaybackState.ACTION_PLAY or
-                    PlaybackState.ACTION_PAUSE or
-                    PlaybackState.ACTION_PLAY_PAUSE or
-                    PlaybackState.ACTION_SKIP_TO_NEXT or
-                    PlaybackState.ACTION_SKIP_TO_PREVIOUS or
-                    PlaybackState.ACTION_STOP or
-                    PlaybackState.ACTION_SEEK_TO
-                )
-                .setState(state, position, 1.0f)
-                .build()
+            var actions = PlaybackState.ACTION_PLAY or
+                PlaybackState.ACTION_PAUSE or
+                PlaybackState.ACTION_PLAY_PAUSE or
+                PlaybackState.ACTION_SKIP_TO_NEXT or
+                PlaybackState.ACTION_SKIP_TO_PREVIOUS or
+                PlaybackState.ACTION_STOP
+            // A live station can't be seeked: no progress bar on the lock screen
+            if (!isLive) actions = actions or PlaybackState.ACTION_SEEK_TO
 
-            session.setPlaybackState(playbackState)
+            session.setPlaybackState(
+                PlaybackState.Builder()
+                    .setActions(actions)
+                    .setState(state, position, if (isPlaying) 1.0f else 0f)
+                    .build()
+            )
 
+            val key = artKeyFor(song)
             val metadata = MediaMetadata.Builder()
                 .putString(MediaMetadata.METADATA_KEY_TITLE, title)
                 .putString(MediaMetadata.METADATA_KEY_ARTIST, artist)
-                .putString(MediaMetadata.METADATA_KEY_ALBUM, (activeEngine?.currentSong?.value?.album?.takeIf { it.isNotBlank() } ?: "Mixtape Pro"))
-                .putLong(MediaMetadata.METADATA_KEY_DURATION, duration)
-                .build()
+                .putString(MediaMetadata.METADATA_KEY_ALBUM, (song?.album?.takeIf { it.isNotBlank() } ?: "Mixtape Pro"))
+            if (!isLive && duration > 0) metadata.putLong(MediaMetadata.METADATA_KEY_DURATION, duration)
+            if (key == artKey && artBitmap != null) {
+                metadata.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, artBitmap)
+                metadata.putBitmap(MediaMetadata.METADATA_KEY_ART, artBitmap)
+            }
+            session.setMetadata(metadata.build())
 
-            session.setMetadata(metadata)
+            if (key != artKey) loadArtwork(song, key)
         } catch (ignored: Exception) {}
+    }
+
+    private fun artKeyFor(song: Song?) = "${song?.id}|${song?.displayArtUri}|${song?.albumArtRes}|$artMode"
+
+    /**
+     * The picture for the lock screen and media controls: the same thing the player's deck shows.
+     * CD, cassette and vinyl use their desk photos; "Album art" uses the cover (or the radio
+     * station's photo), falling back to the song's built-in art and finally the cassette photo.
+     */
+    private fun loadArtwork(song: Song?, key: String) {
+        artJob?.cancel()
+        artJob = scope.launch {
+            val bmp = withContext(Dispatchers.IO) {
+                try {
+                    when (artMode) {
+                        DiscDisplayMode.CD_JEWEL_CASE -> decodeRes(R.drawable.deck_cd_photo)
+                        DiscDisplayMode.VINYL_RECORD -> decodeRes(R.drawable.deck_vinyl_photo)
+                        DiscDisplayMode.CASSETTE_TAPE -> decodeRes(R.drawable.img_cassette_mixtape)
+                        DiscDisplayMode.CRT_MONITOR -> loadUri(song?.displayArtUri)
+                            ?: BuiltInArt.songArt(song?.albumArtRes)?.let { decodeRes(it) }
+                            ?: decodeRes(R.drawable.img_cassette_mixtape)
+                    }
+                } catch (e: Exception) { null }
+            }
+            artKey = key
+            artBitmap = bmp
+            updateMediaSessionState(lastTitle, lastArtist, lastPlaying)
+            startForegroundWithNotification(lastTitle, lastArtist, lastPlaying)
+        }
+    }
+
+    private fun decodeRes(res: Int): Bitmap? =
+        BitmapFactory.decodeResource(resources, res, BitmapFactory.Options().apply { inSampleSize = 2 })
+
+    private suspend fun loadUri(uri: String?): Bitmap? {
+        if (uri.isNullOrBlank()) return null
+        val request = coil.request.ImageRequest.Builder(this)
+            .data(uri)
+            .size(512)
+            .allowHardware(false)
+            .build()
+        val result = coil.Coil.imageLoader(this).execute(request)
+        return (result as? coil.request.SuccessResult)?.drawable?.toBitmap(512, 512)
     }
 
     private fun createNotificationChannel() {
@@ -269,6 +362,7 @@ class RetroAudioPlaybackService : Service() {
             .setContentIntent(openAppIntent)
             .setOngoing(isPlaying)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .apply { if (artBitmap != null) setLargeIcon(artBitmap) }
             .addAction(android.R.drawable.ic_media_previous, "Prev", prevPendingIntent)
             .addAction(playPauseIcon, playPauseTitle, playPausePendingIntent)
             .addAction(android.R.drawable.ic_media_next, "Next", nextPendingIntent)
@@ -295,6 +389,8 @@ class RetroAudioPlaybackService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        running = false
+        scope.cancel()
         try {
             mediaSession?.isActive = false
             mediaSession?.release()

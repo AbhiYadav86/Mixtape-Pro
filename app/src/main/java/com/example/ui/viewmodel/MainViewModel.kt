@@ -49,7 +49,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun hasValidAlbumArt(song: Song?): Boolean {
         if (song == null) return false
-        val hasUri = !song.albumArtUri.isNullOrBlank() && !song.albumArtUri.contains("unsplash", ignoreCase = true)
+        val hasUri = song.displayArtUri != null
         val hasRes = song.albumArtRes != null && song.albumArtRes != 0 && song.albumArtRes != com.example.R.drawable.img_cd_jewel_case
         return hasUri || hasRes
     }
@@ -144,6 +144,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         _discDisplayMode.value = if (hasArt) DiscDisplayMode.CRT_MONITOR else DiscDisplayMode.CD_JEWEL_CASE
                     }
                 }
+        }
+
+        // The lock screen / media controls show the same picture as the player's deck
+        viewModelScope.launch {
+            _discDisplayMode.collect { mode ->
+                com.example.audio.RetroAudioPlaybackService.setArtMode(getApplication(), mode)
+            }
         }
 
         // A station or track that can't be played: say so (the engine no longer fakes it with the synth)
