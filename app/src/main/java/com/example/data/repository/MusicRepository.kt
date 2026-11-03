@@ -25,6 +25,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
 
+private const val MAX_START_MS = 4000L
+
 class MusicRepository(
     private val context: Context,
     private val appDao: AppDao
@@ -486,10 +488,12 @@ class MusicRepository(
             )
         }
 
-        // A station counts as live only if it really streams audio the player can open:
-        // first try, then one retry so a slow mobile network doesn't mark it dead.
-        isLive = probeStream(station.uri) || probeStream(station.uri)
-        responseLatency = (System.currentTimeMillis() - t0).coerceAtLeast(18L)
+        // On air = real audio starts arriving quickly. Two tries (a slow mobile network gets a
+        // second chance); the faster one counts and is shown as the station's ping.
+        val first = probeStream(station.uri)
+        val best = first ?: probeStream(station.uri)
+        isLive = best != null
+        responseLatency = (best ?: (System.currentTimeMillis() - t0)).coerceAtLeast(18L)
 
         val state = if (isLive) StationLiveState.LIVE else StationLiveState.OFFLINE
         val signalPercent = if (isLive) {
@@ -515,12 +519,16 @@ class MusicRepository(
     }
 
     /**
-     * Opens the stream the way the player will and reads the first few KB of audio.
-     * Redirects are followed by hand so an https -> http hop (which Android's MediaPlayer
-     * refuses) counts as dead instead of looking fine.
+     * Opens the stream the way the player will and times how long real audio takes to arrive.
+     * Returns that time in ms, or null when the station is off air: an error, a web page instead
+     * of audio, an https -> http redirect (Android's player refuses those), data that isn't an
+     * audio stream, or audio that takes longer than [MAX_START_MS] to start (too laggy to use).
      */
-    private fun probeStream(startUrl: String): Boolean {
-        if (!startUrl.startsWith("http")) return false
+    private fun probeStream(startUrl: String): Long? {
+        if (!startUrl.startsWith("http")) return null
+        val t0 = System.currentTimeMillis()
+        val deadline = t0 + MAX_START_MS
+        fun left() = (deadline - System.currentTimeMillis()).toInt().coerceAtLeast(1)
         var url = startUrl
         repeat(5) {
             var conn: java.net.HttpURLConnection? = null
@@ -528,39 +536,51 @@ class MusicRepository(
                 conn = (java.net.URL(url).openConnection() as java.net.HttpURLConnection).apply {
                     requestMethod = "GET"
                     instanceFollowRedirects = false
-                    connectTimeout = 5000
-                    readTimeout = 5000
+                    connectTimeout = left()
+                    readTimeout = left()
                     setRequestProperty("User-Agent", "MixtapePro-RadioTuner/3.0 (Android)")
                     setRequestProperty("Icy-MetaData", "0")
                 }
                 val code = conn.responseCode
                 if (code in 300..399) {
-                    val next = conn.getHeaderField("Location") ?: return false
+                    val next = conn.getHeaderField("Location") ?: return null
                     val resolved = java.net.URL(java.net.URL(url), next).toString()
-                    if (url.startsWith("https:") && resolved.startsWith("http:")) return false
+                    if (url.startsWith("https:") && resolved.startsWith("http:")) return null
                     url = resolved
                     return@repeat
                 }
-                if (code != 200) return false
+                if (code != 200) return null
                 val type = (conn.contentType ?: "").lowercase()
-                if (type.startsWith("text/html") || type.startsWith("application/json")) return false
-                // Must actually deliver audio bytes within the timeout
+                if (type.startsWith("text/") || type.contains("json") || type.contains("xml")) return null
+                // Collect ~1 second of audio (16 KB) before the deadline
+                val data = java.io.ByteArrayOutputStream()
                 val buf = ByteArray(4096)
-                var total = 0
-                val deadline = System.currentTimeMillis() + 6000
                 conn.inputStream.use { input ->
-                    while (total < 8 * 1024 && System.currentTimeMillis() < deadline) {
+                    while (data.size() < 16 * 1024 && System.currentTimeMillis() < deadline) {
                         val n = input.read(buf)
                         if (n <= 0) break
-                        total += n
+                        data.write(buf, 0, n)
                     }
                 }
-                return total >= 8 * 1024
+                val elapsed = System.currentTimeMillis() - t0
+                if (data.size() < 16 * 1024 || elapsed > MAX_START_MS) return null
+                return if (looksLikeAudio(data.toByteArray())) elapsed else null
             } catch (e: Exception) {
-                return false
+                return null
             } finally {
                 conn?.disconnect()
             }
+        }
+        return null
+    }
+
+    /** MP3 / AAC frame sync, an ID3 tag or an Ogg page: the bytes really are an audio stream. */
+    private fun looksLikeAudio(b: ByteArray): Boolean {
+        if (b.size >= 4 && ((b[0] == 'I'.code.toByte() && b[1] == 'D'.code.toByte() && b[2] == '3'.code.toByte()) ||
+                    (b[0] == 'O'.code.toByte() && b[1] == 'g'.code.toByte() && b[2] == 'g'.code.toByte() && b[3] == 'S'.code.toByte()))) return true
+        var syncs = 0
+        for (i in 0 until b.size - 1) {
+            if (b[i] == 0xFF.toByte() && (b[i + 1].toInt() and 0xE0) == 0xE0) { syncs++; if (syncs >= 3) return true }
         }
         return false
     }
