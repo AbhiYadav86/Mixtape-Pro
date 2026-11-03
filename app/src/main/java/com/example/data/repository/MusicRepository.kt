@@ -606,10 +606,10 @@ class MusicRepository(
             Song(
                 id = "radio_90s_hits",
                 title = "1990s Mega Hits Live",
-                artist = "WALM 90s Retro Radio",
+                artist = "181.fm Star 90's",
                 album = "Billboard 90s Top 100",
                 durationMs = 0L,
-                uri = "https://icecast.walmradio.com:8443/classic",
+                uri = "https://listen.181fm.com/181-star90s_128k.mp3",
                 albumArtUri = "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80",
                 albumArtRes = R.drawable.img_cd_jewel_case,
                 source = AudioSource.RADIO_STREAM,
