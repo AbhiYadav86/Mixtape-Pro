@@ -368,7 +368,11 @@ class RetroAudioPlayerEngine(
                     } catch (ignored: Exception) {}
 
                     if (song.uri.startsWith("http://") || song.uri.startsWith("https://")) {
-                        setDataSource(song.uri)
+                        // Identify as a radio app: some stations block Android's default player agent
+                        setDataSource(context, Uri.parse(song.uri), mapOf(
+                            "User-Agent" to "MixtapePro-RadioTuner/3.0 (Android)",
+                            "Icy-MetaData" to "0"
+                        ))
                     } else {
                         setDataSource(context, Uri.parse(song.uri))
                     }
@@ -464,7 +468,7 @@ class RetroAudioPlayerEngine(
                 // Radio stations can take a while to connect: wait up to 20 s ("Tuning in…"), then give up
                 // honestly. (Older builds switched to the built-in synth after 2.5 s, which looked like
                 // playback with no sound.)
-                delay(20_000L)
+                delay(if (song.source == AudioSource.RADIO_STREAM) 12_000L else 20_000L)
                 if (isActive && playerState == PlayerState.PREPARING) {
                     withContext(Dispatchers.Main) {
                         if (playerState == PlayerState.PREPARING) {
@@ -707,6 +711,29 @@ class RetroAudioPlayerEngine(
                 }
             }
         }
+    }
+
+    /**
+     * Called when the app comes back on screen: re-read the real player state and restart the
+     * progress timer and visualiser, in case they stopped while the app was in the background.
+     */
+    fun resyncAfterForeground() {
+        val mp = mediaPlayer
+        val reallyPlaying = try { mp != null && mp.isPlaying } catch (e: Exception) { false }
+        if (reallyPlaying && mp != null) {
+            playerState = PlayerState.PLAYING
+            _isPlaying.value = true
+            try { _currentPositionMs.value = mp.currentPosition.toLong() } catch (ignored: Exception) {}
+            visualizerEngine.setPlaybackActive(!_isBuffering.value)
+            try { visualizerEngine.attachToAudioSession(mp.audioSessionId, context) } catch (ignored: Exception) {}
+            startProgressTracker()
+        } else if (_isPlaying.value && playerState == PlayerState.PLAYING && mp != null) {
+            // The UI thinks it's playing but the player stopped: show it as paused
+            _isPlaying.value = false
+            visualizerEngine.setPlaybackActive(false)
+            RetroAudioPlaybackService.startOrUpdateService(context, _currentSong.value, false)
+        }
+        visualizerEngine.setUiVisible(true)
     }
 
     private fun startProgressTracker() {

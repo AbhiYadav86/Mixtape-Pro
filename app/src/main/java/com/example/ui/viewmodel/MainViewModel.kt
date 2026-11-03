@@ -159,6 +159,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (msg != null) {
                     _statusMessage.value = msg
                     playerEngine.clearPlaybackError()
+                    // A station that failed to play is off air, whatever the launch check said
+                    playerEngine.currentSong.value?.takeIf { it.source == com.example.data.model.AudioSource.RADIO_STREAM }?.let { st ->
+                        _stationStatusMap.update { map ->
+                            map[st.id]?.let { map + (st.id to it.copy(state = StationLiveState.OFFLINE, isLiveStream = false, signalPercent = 0)) } ?: map
+                        }
+                    }
                 }
             }
         }
@@ -1554,6 +1560,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun clearStatusMessage() {
         _statusMessage.value = null
+    }
+
+    /** The app went to the background (false) or came back on screen (true). */
+    fun onAppVisible(visible: Boolean) {
+        if (visible) playerEngine.resyncAfterForeground()
+        else visualizerEngine.setUiVisible(false)
     }
 
     override fun onCleared() {

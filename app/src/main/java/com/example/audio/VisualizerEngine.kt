@@ -41,6 +41,14 @@ class VisualizerEngine {
 
     private var animationJob: Job? = null
     private var isPlaying = false
+    @Volatile private var uiVisible = true
+
+    /** Stop drawing work while the app is in the background; pick up again on return. */
+    fun setUiVisible(visible: Boolean) {
+        uiVisible = visible
+        if (visible && isPlaying) startSimulationLoop()
+        else if (!visible) animationJob?.cancel()
+    }
     private var simPhase = 0.0
 
     private fun isHardwareVisualizerSupported(context: Context?): Boolean {
@@ -92,7 +100,7 @@ class VisualizerEngine {
     fun setPlaybackActive(active: Boolean) {
         isPlaying = active
         if (active) {
-            startSimulationLoop()
+            if (uiVisible) startSimulationLoop()
         } else {
             decayToZero()
         }

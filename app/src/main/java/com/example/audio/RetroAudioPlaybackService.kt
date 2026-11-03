@@ -366,9 +366,19 @@ class RetroAudioPlaybackService : Service() {
             .addAction(android.R.drawable.ic_media_previous, "Prev", prevPendingIntent)
             .addAction(playPauseIcon, playPauseTitle, playPausePendingIntent)
             .addAction(android.R.drawable.ic_media_next, "Next", nextPendingIntent)
-            .addAction(android.R.drawable.ic_lock_silent_mode, "Vol -", volDownPendingIntent)
-            .addAction(android.R.drawable.ic_lock_silent_mode_off, "Vol +", volUpPendingIntent)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent)
+            .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
+            .setDeleteIntent(stopPendingIntent)
+
+        // A proper media notification tied to the session: the phone's media panel and lock
+        // screen then show the artwork, the controls and (for tracks) the progress bar.
+        mediaSession?.sessionToken?.let { token ->
+            builder.setStyle(
+                androidx.media.app.NotificationCompat.MediaStyle()
+                    .setMediaSession(android.support.v4.media.session.MediaSessionCompat.Token.fromToken(token))
+                    .setShowActionsInCompactView(0, 1, 2)
+            )
+        }
 
         val notification = builder.build()
 

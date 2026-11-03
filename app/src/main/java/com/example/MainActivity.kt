@@ -61,6 +61,16 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onStart() {
+        super.onStart()
+        viewModel.onAppVisible(true)
+    }
+
+    override fun onStop() {
+        viewModel.onAppVisible(false)
+        super.onStop()
+    }
 }
 
 @Composable
