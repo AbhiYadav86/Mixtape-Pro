@@ -190,10 +190,12 @@ private fun RenderAlbumImage(song: Song?, onArtworkMissing: (Song) -> Unit = {})
             contentScale = ContentScale.Crop
         )
     } else {
-        // Authentic procedural vintage cassette/CD label styling
-        GenerativeAlbumArt(
-            song = song,
-            modifier = Modifier.fillMaxSize()
+        // No cover: a 90s desk photo (neon CD or grunge record) instead of a generated label
+        Image(
+            painter = painterResource(id = com.example.data.model.BuiltInArt.fallbackPhoto(song?.id)),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
         )
     }
 }

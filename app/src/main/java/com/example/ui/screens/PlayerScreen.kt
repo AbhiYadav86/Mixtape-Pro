@@ -647,7 +647,10 @@ fun PlayerScreen(
                                 onShuffleAll = { list -> viewModel.shuffleAll(list) },
                                 onRemoveFromLibrary = { list -> viewModel.removeSongsFromLibrary(list, deletedFromDevice = false) },
                                 onDeletedFromDevice = { list -> viewModel.removeSongsFromLibrary(list, deletedFromDevice = true) },
-                                onRestoreRemoved = { viewModel.restoreRemovedTracks() }
+                                onRestoreRemoved = { viewModel.restoreRemovedTracks() },
+                                loadPlaylistSongs = { p -> viewModel.songsForPlaylist(p.id) },
+                                onPlayMixtape = { p -> viewModel.playPlaylist(p) },
+                                onPlayFromPlaylist = { list, i -> viewModel.playQueue(list, i) }
                             )
                         }
                         2 -> {
@@ -815,6 +818,11 @@ fun PlayerScreen(
             },
             onEnrichMetadata = { song ->
                 viewModel.enrichSongMetadata(song)
+            },
+            loadPlaylistSongs = { p -> viewModel.songsForPlaylist(p.id) },
+            onPlayFromPlaylist = { list, i ->
+                viewModel.playQueue(list, i)
+                showTrackMenuDialog = false
             },
             onDismiss = { showTrackMenuDialog = false }
         )

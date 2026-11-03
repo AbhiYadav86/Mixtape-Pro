@@ -133,6 +133,16 @@ class RetroAudioPlayerEngine(
     }
 
     private fun shuffleValid() = shuffleOrder.size == _queue.value.size && shuffleOrder.isNotEmpty()
+
+    /**
+     * True when the queue is a list the user picked (a mixtape, playlist, shuffle-all).
+     * False when songs were picked one at a time: the queue is then just the listening history,
+     * and Next asks [smartNextProvider] what to play (next on the album, same artist, library).
+     */
+    private var queueIsExplicit = false
+
+    /** Chooses the song after [current] when there's no picked list. Set by the view model. */
+    var smartNextProvider: ((current: Song, recentIds: Set<String>, shuffle: Boolean) -> Song?)? = null
     var onSongPlayed: ((Song) -> Unit)? = null
 
     fun setCrossfadeSeconds(seconds: Int) {
@@ -250,6 +260,7 @@ class RetroAudioPlayerEngine(
     }
 
     fun setQueue(songs: List<Song>, startIndex: Int = 0) {
+        queueIsExplicit = true
         _queue.value = songs
         if (_isShuffle.value) rebuildShuffle(startIndex)
         if (startIndex in songs.indices) {
@@ -260,13 +271,23 @@ class RetroAudioPlayerEngine(
     fun playSong(song: Song) {
         val currentQueue = _queue.value
         val index = currentQueue.indexOfFirst { it.id == song.id }
-        if (index >= 0) {
+        if (queueIsExplicit && index >= 0) {
+            // A song from the mixtape that's playing: stay in the mixtape
             playSongAtIndex(index)
-        } else {
-            val newQueue = currentQueue + song
-            _queue.value = newQueue
-            playSongAtIndex(newQueue.size - 1)
+            return
         }
+        // Picked on its own: it joins the listening history and Next works out what follows
+        queueIsExplicit = false
+        if (index >= 0 && index == currentIndex) { playSongAtIndex(index); return }
+        appendToHistoryAndPlay(song)
+    }
+
+    private fun appendToHistoryAndPlay(song: Song) {
+        val keep = _queue.value.take((currentIndex + 1).coerceAtLeast(0)).takeLast(199)
+        val newQueue = keep + song
+        _queue.value = newQueue
+        if (_isShuffle.value) rebuildShuffle(newQueue.size - 1)
+        playSongAtIndex(newQueue.size - 1)
     }
 
     /**
@@ -275,6 +296,7 @@ class RetroAudioPlayerEngine(
      */
     fun shufflePlay(songs: List<Song>) {
         if (songs.isEmpty()) return
+        queueIsExplicit = true
         _isShuffle.value = true
         if (_repeatMode.value == RepeatMode.ONE) _repeatMode.value = RepeatMode.ALL
         _queue.value = songs
@@ -603,6 +625,15 @@ class RetroAudioPlayerEngine(
         val list = _queue.value
         if (list.isEmpty()) return
 
+        if (!queueIsExplicit) {
+            // Went back with Prev earlier: Next first walks forward through what was played
+            if (currentIndex in 0 until list.size - 1) { playSongAtIndex(currentIndex + 1); return }
+            val current = _currentSong.value
+            val recent = list.takeLast(40).map { it.id }.toSet()
+            val pick = current?.let { smartNextProvider?.invoke(it, recent, _isShuffle.value) }
+            if (pick != null) { appendToHistoryAndPlay(pick); return }
+        }
+
         if (_isShuffle.value && list.size > 1) {
             if (!shuffleValid()) rebuildShuffle(currentIndex)
             if (shufflePos + 1 >= shuffleOrder.size) {
@@ -629,6 +660,11 @@ class RetroAudioPlayerEngine(
 
         if (_currentPositionMs.value > 3000L) {
             seekTo(0)
+            return
+        }
+
+        if (!queueIsExplicit) {
+            if (currentIndex > 0) playSongAtIndex(currentIndex - 1) else seekTo(0)
             return
         }
 
@@ -703,6 +739,8 @@ class RetroAudioPlayerEngine(
                 nextTrack()
             }
             RepeatMode.OFF -> {
+                // Songs picked one at a time keep going (next on the album, the artist, the library)
+                if (!queueIsExplicit && smartNextProvider != null) { nextTrack(); return }
                 val more = if (_isShuffle.value && shuffleValid()) shufflePos < shuffleOrder.size - 1 else currentIndex < _queue.value.size - 1
                 if (more) {
                     nextTrack()

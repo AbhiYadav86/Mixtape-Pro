@@ -234,6 +234,29 @@ class MusicRepository(
         appDao.setPreference(AppPreferenceEntity(PREF_HIDDEN, ""))
     }
 
+    /**
+     * Album track numbers for device songs ("local_<id>" -> track), read from Android's media
+     * library. Disc 2 track 3 comes back as 2003, so sorting by it gives the album's real order.
+     */
+    suspend fun loadTrackNumbers(): Map<String, Int> = withContext(Dispatchers.IO) {
+        val out = HashMap<String, Int>()
+        try {
+            context.contentResolver.query(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TRACK),
+                null, null, null
+            )?.use { c ->
+                val idCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
+                val trCol = c.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK)
+                while (c.moveToNext()) {
+                    val t = c.getInt(trCol)
+                    if (t > 0) out["local_${c.getLong(idCol)}"] = t
+                }
+            }
+        } catch (ignored: Exception) {}
+        out
+    }
+
     suspend fun scanLocalAudioFiles(): Int = withContext(Dispatchers.IO) {
         // One-time cleanup of stock-photo placeholders that older builds stored as "album art"
         try { appDao.clearStockPhotoArtOnLocalSongs() } catch (_: Exception) {}

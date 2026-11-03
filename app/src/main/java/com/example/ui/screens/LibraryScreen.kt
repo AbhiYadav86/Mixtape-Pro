@@ -52,6 +52,9 @@ fun LibraryScreen(
     onRemoveFromLibrary: (List<Song>) -> Unit = {},
     onDeletedFromDevice: (List<Song>) -> Unit = {},
     onRestoreRemoved: () -> Unit = {},
+    loadPlaylistSongs: (suspend (Playlist) -> List<Song>)? = null,
+    onPlayMixtape: (Playlist) -> Unit = {},
+    onPlayFromPlaylist: (songs: List<Song>, index: Int) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -211,7 +214,8 @@ fun LibraryScreen(
                 .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            val tabs = listOf("All", "Artist", "Genre", "Album", "Folders", "Favorites")
+            val tabs = listOf("All", "Artist", "Genre", "Album", "Folders", "Favorites") +
+                (if (loadPlaylistSongs != null) listOf("Mixtapes (${playlists.size})") else emptyList())
             tabs.forEachIndexed { index, title ->
                 val isSelected = selectedTab == index
                 Box(
@@ -352,6 +356,28 @@ fun LibraryScreen(
         }
 
         Spacer(modifier = Modifier.height(4.dp))
+
+        // Mixtapes tab: each mixtape opens like a drop-down with its songs
+        if (selectedTab == 6 && loadPlaylistSongs != null) {
+            val shown = playlists.filter { searchQuery.isBlank() || it.name.contains(searchQuery, true) || it.description.contains(searchQuery, true) }
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().testTag("library_mixtapes_list"),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                items(shown, key = { it.id }) { playlist ->
+                    com.example.ui.components.MixtapeDropdownRow(
+                        playlist = playlist,
+                        skin = skin,
+                        currentSong = currentSong,
+                        isPlaying = isPlaying,
+                        loadSongs = loadPlaylistSongs,
+                        onPlayMixtape = { onPlayMixtape(playlist) },
+                        onPlaySong = onPlayFromPlaylist
+                    )
+                }
+            }
+            return@Column
+        }
 
         // Song List
         LazyColumn(

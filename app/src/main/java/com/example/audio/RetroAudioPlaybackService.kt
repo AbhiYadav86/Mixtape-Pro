@@ -257,8 +257,8 @@ class RetroAudioPlaybackService : Service() {
                         DiscDisplayMode.VINYL_RECORD -> decodeRes(R.drawable.deck_vinyl_photo)
                         DiscDisplayMode.CASSETTE_TAPE -> decodeRes(R.drawable.img_cassette_mixtape)
                         DiscDisplayMode.CRT_MONITOR -> loadUri(song?.displayArtUri)
-                            ?: BuiltInArt.songArt(song?.albumArtRes)?.let { decodeRes(it) }
-                            ?: decodeRes(R.drawable.img_cassette_mixtape)
+                            ?: BuiltInArt.songArt(song?.albumArtRes)?.takeIf { it != R.drawable.img_cd_jewel_case }?.let { decodeRes(it) }
+                            ?: decodeRes(BuiltInArt.fallbackPhoto(song?.id))
                     }
                 } catch (e: Exception) { null }
             }

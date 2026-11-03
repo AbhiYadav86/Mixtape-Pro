@@ -153,6 +153,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
+        // What plays after a song picked on its own (see pickNextSong)
+        viewModelScope.launch {
+            repository.allSongs.map { list -> list.filter { repository.isEnrichable(it) } }.collect { list ->
+                libraryCache = list
+                trackNumbers = repository.loadTrackNumbers()
+            }
+        }
+        playerEngine.smartNextProvider = { current, recent, shuffle -> pickNextSong(current, recent, shuffle) }
+
         // A station or track that can't be played: say so (the engine no longer fakes it with the synth)
         viewModelScope.launch {
             playerEngine.playbackError.collect { msg ->
@@ -1561,6 +1570,56 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun clearStatusMessage() {
         _statusMessage.value = null
     }
+
+    @Volatile private var libraryCache: List<Song> = emptyList()
+    @Volatile private var trackNumbers: Map<String, Int> = emptyMap()
+
+    private fun isRealAlbum(name: String) = name.isNotBlank() && name.lowercase() !in setOf(
+        "unknown", "unknown album", "<unknown>", "music", "download", "downloads",
+        "flashback mixtape", "mixtape pro", "single", "singles"
+    )
+
+    /**
+     * What Next plays after a song that was picked on its own:
+     *  - a radio station -> the next station that's on air;
+     *  - shuffle on -> any song in the library not heard recently;
+     *  - otherwise the next track on the same album (real album order), then another song by
+     *    the same artist, then any other song in the library, avoiding recent plays.
+     */
+    private fun pickNextSong(current: Song, recent: Set<String>, shuffle: Boolean): Song? {
+        if (current.source == com.example.data.model.AudioSource.RADIO_STREAM) {
+            val stations: List<Song> = _radioStations.value.filter { it.uri.startsWith("http") }
+            if (stations.isEmpty()) return null
+            val i = stations.indexOfFirst { it.id == current.id }
+            for (k in 1..stations.size) {
+                val st: Song = stations.get((i + k).mod(stations.size))
+                if (st.id != current.id && _stationStatusMap.value[st.id]?.state != StationLiveState.OFFLINE) return st
+            }
+            return null
+        }
+        val lib = libraryCache.filter { it.source != com.example.data.model.AudioSource.RADIO_STREAM }
+        if (lib.isEmpty()) return null
+        val others = lib.filter { it.id != current.id }
+        if (others.isEmpty()) return null
+        val fresh = others.filter { it.id !in recent }.ifEmpty { others }
+        if (shuffle) return fresh.random()
+
+        if (isRealAlbum(current.album)) {
+            val album = lib.filter { it.album.equals(current.album, ignoreCase = true) }
+                .sortedWith(compareBy<Song>({ trackNumbers[it.id] ?: Int.MAX_VALUE }, { it.uri.substringAfterLast('/').toLongOrNull() ?: Long.MAX_VALUE }, { it.title.lowercase() }))
+            val idx = album.indexOfFirst { it.id == current.id }
+            if (idx >= 0 && idx < album.lastIndex) return album[idx + 1]
+        }
+        val artist = current.artist
+        if (artist.isNotBlank() && !artist.equals("Unknown Artist", ignoreCase = true)) {
+            val byArtist = fresh.filter { it.artist.equals(artist, ignoreCase = true) }
+            if (byArtist.isNotEmpty()) return byArtist.random()
+        }
+        return fresh.random()
+    }
+
+    suspend fun songsForPlaylist(playlistId: String): List<Song> =
+        repository.getSongsForPlaylist(playlistId).first()
 
     /** The app went to the background (false) or came back on screen (true). */
     fun onAppVisible(visible: Boolean) {

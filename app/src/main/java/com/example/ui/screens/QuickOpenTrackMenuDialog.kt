@@ -38,6 +38,8 @@ fun QuickOpenTrackMenuDialog(
     onSongSelected: (Song) -> Unit,
     onPlaylistSelected: (Playlist) -> Unit,
     onEnrichMetadata: ((Song) -> Unit)? = null,
+    loadPlaylistSongs: (suspend (Playlist) -> List<Song>)? = null,
+    onPlayFromPlaylist: ((songs: List<Song>, index: Int) -> Unit)? = null,
     onDismiss: () -> Unit
 ) {
     var selectedSection by remember { mutableIntStateOf(0) } // 0: Library Tracks, 1: Mixtapes / Playlists
@@ -358,7 +360,17 @@ fun QuickOpenTrackMenuDialog(
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             items(filteredPlaylists, key = { it.id }) { playlist ->
-                                QuickPlaylistRow(
+                                if (loadPlaylistSongs != null && onPlayFromPlaylist != null) {
+                                    com.example.ui.components.MixtapeDropdownRow(
+                                        playlist = playlist,
+                                        skin = skin,
+                                        currentSong = currentSong,
+                                        isPlaying = isPlaying,
+                                        loadSongs = loadPlaylistSongs,
+                                        onPlayMixtape = { onPlaylistSelected(playlist); onDismiss() },
+                                        onPlaySong = { list, i -> onPlayFromPlaylist(list, i); onDismiss() }
+                                    )
+                                } else QuickPlaylistRow(
                                     playlist = playlist,
                                     skin = skin,
                                     onPlayPlaylist = {
