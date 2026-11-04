@@ -372,6 +372,29 @@ fun SkinSelectorDialog(
                         }
                     }
                 }
+
+                // App info + privacy policy (Google Play requires an in-app link)
+                val linkContext = androidx.compose.ui.platform.LocalContext.current
+                Text(
+                    text = "Mixtape Pro ${com.example.BuildConfig.VERSION_NAME}  •  Privacy policy",
+                    fontSize = 11.sp,
+                    color = Color(0xFF94A3B8),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .clickable {
+                            try {
+                                linkContext.startActivity(
+                                    android.content.Intent(
+                                        android.content.Intent.ACTION_VIEW,
+                                        android.net.Uri.parse("https://abhiyadav86.github.io/Mixtape-Pro/privacy.html")
+                                    )
+                                )
+                            } catch (ignored: Exception) {}
+                        }
+                        .padding(vertical = 6.dp)
+                )
             }
         }
     }

@@ -420,12 +420,16 @@ fun EqualizerDialog(
                             fontSize = 12.sp,
                             fontFamily = FontFamily.SansSerif,
                             fontWeight = FontWeight.Bold,
-                            color = skin.lcdTextColor
+                            color = skin.lcdTextColor,
+                            modifier = Modifier.weight(1f)
                         )
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Touch / Drag Bars",
+                            text = "Drag bars",
                             fontSize = 10.sp,
-                            color = Color(0xFF94A3B8)
+                            color = Color(0xFF94A3B8),
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
 
