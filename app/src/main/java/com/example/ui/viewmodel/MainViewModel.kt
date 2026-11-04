@@ -26,6 +26,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val playerEngine = com.example.audio.PlayerCore.engine(application)
     val visualizerEngine = playerEngine.visualizerEngine
     val equalizerController = playerEngine.equalizerController
+    // Chooses what plays after a song picked on its own (see pickNextSong)
+    private val smartNext: (Song, Set<String>, Boolean) -> Song? = { current, recent, shuffle -> pickNextSong(current, recent, shuffle) }
 
     // Current Retro Skin Theme
     private val _currentSkin = MutableStateFlow<RetroSkin>(RetroSkinDefinitions.WINAMP_CLASSIC)
@@ -1579,7 +1581,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _statusMessage.value = null
     }
 
-    private val smartNext: (Song, Set<String>, Boolean) -> Song? = { current, recent, shuffle -> pickNextSong(current, recent, shuffle) }
     @Volatile private var libraryCache: List<Song> = emptyList()
     @Volatile private var trackNumbers: Map<String, Int> = emptyMap()
 
