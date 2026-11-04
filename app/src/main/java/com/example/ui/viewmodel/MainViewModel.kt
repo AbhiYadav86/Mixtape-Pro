@@ -22,9 +22,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val appDao = db.appDao()
     val repository = MusicRepository(application, appDao)
 
-    val visualizerEngine = VisualizerEngine()
-    val equalizerController = RetroEqualizerController()
-    val playerEngine = RetroAudioPlayerEngine(application, visualizerEngine, equalizerController)
+    // The app-wide player (shared by every screen, survives the screen being re-created)
+    val playerEngine = com.example.audio.PlayerCore.engine(application)
+    val visualizerEngine = playerEngine.visualizerEngine
+    val equalizerController = playerEngine.equalizerController
 
     // Current Retro Skin Theme
     private val _currentSkin = MutableStateFlow<RetroSkin>(RetroSkinDefinitions.WINAMP_CLASSIC)
@@ -160,7 +161,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 trackNumbers = repository.loadTrackNumbers()
             }
         }
-        playerEngine.smartNextProvider = { current, recent, shuffle -> pickNextSong(current, recent, shuffle) }
+        playerEngine.smartNextProvider = smartNext
+
+        // New artwork found for the playing song: the media controls pick it up straight away
+        viewModelScope.launch {
+            playerEngine.currentSong.map { it?.id to it?.displayArtUri }.distinctUntilChanged().collect {
+                com.example.audio.RetroAudioPlaybackService.refresh(getApplication())
+            }
+        }
 
         // A station or track that can't be played: say so (the engine no longer fakes it with the synth)
         viewModelScope.launch {
@@ -1571,6 +1579,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _statusMessage.value = null
     }
 
+    private val smartNext: (Song, Set<String>, Boolean) -> Song? = { current, recent, shuffle -> pickNextSong(current, recent, shuffle) }
     @Volatile private var libraryCache: List<Song> = emptyList()
     @Volatile private var trackNumbers: Map<String, Int> = emptyMap()
 
@@ -1629,6 +1638,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     override fun onCleared() {
         super.onCleared()
-        playerEngine.release()
+        // The player is app-wide: music keeps playing after the screen closes. QUIT or the
+        // notification's Stop button end playback.
+        if (playerEngine.smartNextProvider === smartNext) playerEngine.smartNextProvider = null
     }
 }

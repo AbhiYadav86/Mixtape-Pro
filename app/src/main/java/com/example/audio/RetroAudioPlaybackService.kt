@@ -51,6 +51,14 @@ class RetroAudioPlaybackService : Service() {
         @Volatile var artMode: DiscDisplayMode = DiscDisplayMode.CRT_MONITOR
         @Volatile private var running = false
 
+        /** Re-draw the media controls (new artwork, etc.) if the service is running. */
+        fun refresh(context: Context) {
+            if (!running) return
+            try {
+                context.startService(Intent(context, RetroAudioPlaybackService::class.java).apply { action = ACTION_REFRESH_ART })
+            } catch (ignored: Exception) {}
+        }
+
         /** Called when the deck view changes, so the media controls follow it. */
         fun setArtMode(context: Context, mode: DiscDisplayMode) {
             if (artMode == mode) return
@@ -138,6 +146,16 @@ class RetroAudioPlaybackService : Service() {
                         activeEngine?.seekTo(pos)
                     }
                 })
+                // Tapping the media panel returns to the open app instead of starting a second copy
+                setSessionActivity(
+                    PendingIntent.getActivity(
+                        this@RetroAudioPlaybackService, 10,
+                        Intent(this@RetroAudioPlaybackService, MainActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        },
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                )
                 isActive = true
             }
         } catch (ignored: Exception) {}
