@@ -187,7 +187,7 @@ fun WelcomeCard(skin: RetroSkin, onStart: () -> Unit, onSkip: () -> Unit) {
             Text("Your MP3s, the 90s way. Take a quick tour of the deck: 5 stops, under a minute.",
                 fontSize = 15.sp, lineHeight = 21.sp, color = skin.lcdTextColor.copy(alpha = 0.88f), textAlign = TextAlign.Center)
             Spacer(Modifier.height(18.dp))
-            SkinButton(skin, "Start the tour ▸", Modifier.fillMaxWidth().testTag("tour_start"), onStart)
+            SkinButton(skin, "Start the tour ▸", Modifier.testTag("tour_start"), onStart)
             Spacer(Modifier.height(6.dp))
             LinkText(skin, "Skip, I'll explore on my own", onSkip)
             Text("You can replay it any time from ⚙ Settings.", fontSize = 12.sp, color = skin.lcdTextColor.copy(alpha = 0.7f), textAlign = TextAlign.Center)
