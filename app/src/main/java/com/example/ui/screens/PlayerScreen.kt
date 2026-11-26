@@ -84,6 +84,28 @@ fun PlayerScreen(
     var showTrackMenuDialog by remember { mutableStateOf(false) }
     var showFullLyrics by remember { mutableStateOf(false) }
     var showVisualMenu by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
+    var showShare by remember { mutableStateOf(false) }
+    var showWhatsNew by remember { mutableStateOf(false) }
+    // -1: no tour, 0: welcome card, 1..5: tour stops
+    var tourStep by remember { mutableIntStateOf(-1) }
+    val appContext = androidx.compose.ui.platform.LocalContext.current
+
+    // First launch: welcome + tour. After an update: "What's new" once.
+    LaunchedEffect(Unit) {
+        if (!AppPrefs.tourDone(appContext)) tourStep = 0
+        else if (AppPrefs.lastVersion(appContext) in 1 until com.example.BuildConfig.VERSION_CODE) showWhatsNew = true
+        AppPrefs.setLastVersion(appContext)
+    }
+
+    // Google Play's rating sheet, once, after the first mix or ringtone is saved.
+    LaunchedEffect(studioExport.lastExportUri) {
+        if (studioExport.lastExportUri != null && !AppPrefs.reviewAsked(appContext)) {
+            AppPrefs.setReviewAsked(appContext)
+            kotlinx.coroutines.delay(1500)
+            appContext.findActivity()?.let { requestInAppReview(it) }
+        }
+    }
 
     val driveSongs = remember(allSongs) {
         allSongs.filter { it.source == AudioSource.GOOGLE_DRIVE }
@@ -97,6 +119,7 @@ fun PlayerScreen(
         }
     }
 
+    Box(Modifier.fillMaxSize()) {
     Scaffold(
         modifier = modifier
             .fillMaxSize()
@@ -136,6 +159,10 @@ fun PlayerScreen(
                     // Winamp / Retro Hardware Title Bar with Quit, Eq and Skin Buttons
                     RetroTitleBar(
                         skin = skin,
+                        onSettingsClick = {
+                            RetroSoundEffects.playClick(RetroSoundEffects.SoundType.WINAMP_CLICK)
+                            showSettings = true
+                        },
                         onSkinClick = {
                             RetroSoundEffects.playClick(RetroSoundEffects.SoundType.WINAMP_CLICK)
                             showSkinDialog = true
@@ -388,6 +415,7 @@ fun PlayerScreen(
                                         )
 
                                         // 4. Beveled Physical Transport Controls
+                                        Box(Modifier.tourTarget("transport")) {
                                         RetroControlBar(
                                             isPlaying = isPlaying,
                                             skin = skin,
@@ -402,6 +430,7 @@ fun PlayerScreen(
                                                 showTrackMenuDialog = true
                                             }
                                         )
+                                        }
                                     }
 
                                 } // end player column
@@ -785,6 +814,24 @@ fun PlayerScreen(
         }
     }
 
+    // First-launch welcome card and the guided tour, drawn over the whole player
+    when {
+        tourStep == 0 -> WelcomeCard(
+            skin = skin,
+            onStart = { activeTab = 0; tourStep = 1 },
+            onSkip = { AppPrefs.setTourDone(appContext); tourStep = -1 }
+        )
+        tourStep in 1..TOUR_STOPS.size -> TourOverlay(
+            skin = skin,
+            index = tourStep - 1,
+            onNext = {
+                if (tourStep >= TOUR_STOPS.size) { AppPrefs.setTourDone(appContext); tourStep = -1 } else tourStep += 1
+            },
+            onSkip = { AppPrefs.setTourDone(appContext); tourStep = -1 }
+        )
+    }
+    }
+
     // Quick Open Track & Mixtape Menu Dialog
     if (showFullLyrics) {
         com.example.ui.components.FullScreenLyricsDialog(
@@ -839,6 +886,22 @@ fun PlayerScreen(
             onDismiss = { showSkinDialog = false }
         )
     }
+
+    // Settings & About, and what it opens
+    if (showSettings) {
+        SettingsAboutScreen(
+            skin = skin,
+            onDismiss = { showSettings = false },
+            onShare = { showShare = true },
+            onRate = { openPlayStore(appContext) },
+            onReplayTour = { showSettings = false; activeTab = 0; tourStep = 1 },
+            onWhatsNew = { showWhatsNew = true },
+            onFeedback = { sendFeedback(appContext) },
+            onPrivacy = { openUrl(appContext, PRIVACY_URL) }
+        )
+    }
+    if (showShare) ShareAppDialog(skin = skin, onDismiss = { showShare = false })
+    if (showWhatsNew) WhatsNewDialog(skin = skin, onDismiss = { showWhatsNew = false })
 
     // Equalizer & DSP Dialog
     if (showEqDialog) {
@@ -926,8 +989,9 @@ fun PlayerScreen(
 }
 
 @Composable
-private fun RetroTitleBar(
+internal fun RetroTitleBar(
     skin: RetroSkin,
+    onSettingsClick: () -> Unit,
     onSkinClick: () -> Unit,
     onEqClick: () -> Unit,
     onQuitClick: () -> Unit
@@ -952,6 +1016,24 @@ private fun RetroTitleBar(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.weight(1f)
             ) {
+                // Settings & About (top-left corner)
+                RetroTactileButton(
+                    onClick = { onSettingsClick() },
+                    shape = RoundedCornerShape(3.dp),
+                    backgroundBrush = skin.buttonBackground,
+                    borderUnpressed = skin.buttonBorderColor,
+                    elevation = 3.dp,
+                    contentPadding = PaddingValues(horizontal = 5.dp, vertical = 3.dp),
+                    soundType = RetroSoundEffects.SoundType.WINAMP_CLICK,
+                    modifier = Modifier.tourTarget("settings").testTag("settings_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Settings and about",
+                        tint = skin.buttonIconColor,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
                 androidx.compose.foundation.Image(
                     painter = androidx.compose.ui.res.painterResource(id = com.example.R.drawable.ra98_note_logo_1787601220471),
                     contentDescription = "Mixtape Pro logo",
@@ -987,6 +1069,7 @@ private fun RetroTitleBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 RetroTactileButton(
+                    modifier = Modifier.tourTarget("skins"),
                     onClick = { onSkinClick() },
                     shape = RoundedCornerShape(3.dp),
                     backgroundBrush = skin.buttonBackground,
@@ -1005,6 +1088,7 @@ private fun RetroTitleBar(
                 }
 
                 RetroTactileButton(
+                    modifier = Modifier.tourTarget("eq"),
                     onClick = { onEqClick() },
                     shape = RoundedCornerShape(3.dp),
                     backgroundBrush = skin.buttonBackground,
@@ -1177,7 +1261,7 @@ private fun RetroNavigationBar(
 
                 RetroTactileButton(
                     onClick = { onTabSelected(index) },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).then(if (index == 4) Modifier.tourTarget("djstudio") else Modifier),
                     shape = RoundedCornerShape(6.dp),
                     backgroundColor = btnBg,
                     borderUnpressed = btnBorder,

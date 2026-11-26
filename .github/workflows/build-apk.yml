@@ -112,13 +112,6 @@ jobs:
           git add -f ci-logs/build.log ci-logs/errors.txt ci-logs/sha.txt
           git commit -qm "CI log for ${GITHUB_SHA}" && git push -f origin ci-logs || true
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: MixtapePro-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-
       - name: Publish APK releases (permanent version + "latest")
         if: success() && github.ref_name == 'main'
         env:

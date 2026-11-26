@@ -1,6 +1,9 @@
 package com.example
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
@@ -149,5 +152,59 @@ class UiScreensTest {
             }
         }
         compose.onRoot().captureRoboImage("$dir/decks.png")
+    }
+
+    // ---- Onboarding, Settings & About (feedback from closed testing) ----
+    private val aqua = RetroSkinDefinitions.ALL_SKINS.first { it.name.startsWith("Aqua") }
+
+    /** A stand-in player: title bar (with the new gear) on the skin's chassis. */
+    @Composable private fun fakePlayer(s: com.example.data.model.RetroSkin) {
+        androidx.compose.foundation.layout.Column(Modifier.fillMaxSize().background(s.chassisBackground)) {
+            com.example.ui.screens.RetroTitleBar(skin = s, onSettingsClick = {}, onSkinClick = {}, onEqClick = {}, onQuitClick = {})
+        }
+    }
+
+    @Test fun titleBarWithSettings() {
+        show { Box(Modifier.fillMaxWidth()) { com.example.ui.screens.RetroTitleBar(skin = aqua, onSettingsClick = {}, onSkinClick = {}, onEqClick = {}, onQuitClick = {}) } }
+        compose.onRoot().captureRoboImage("$dir/onb-1-titlebar.png")
+    }
+
+    @Test fun welcomeCard() {
+        show { Box(Modifier.fillMaxSize()) { fakePlayer(aqua); com.example.ui.screens.WelcomeCard(aqua, {}, {}) } }
+        compose.onRoot().captureRoboImage("$dir/onb-2-welcome.png")
+    }
+
+    @Test fun tourSkinsStop() {
+        show { Box(Modifier.fillMaxSize()) { fakePlayer(aqua); com.example.ui.screens.TourOverlay(aqua, 1, {}, {}) } }
+        compose.mainClock.advanceTimeBy(500L)
+        compose.onRoot().captureRoboImage("$dir/onb-3-tour-skins.png")
+    }
+
+    @Test fun tourSettingsStopOtherSkin() {
+        show { Box(Modifier.fillMaxSize()) { fakePlayer(skin); com.example.ui.screens.TourOverlay(skin, 4, {}, {}) } }
+        compose.mainClock.advanceTimeBy(500L)
+        compose.onRoot().captureRoboImage("$dir/onb-4-tour-settings-scrollwheel.png")
+    }
+
+    @Test fun settingsScreen() {
+        show { com.example.ui.screens.SettingsAboutContent(aqua, {}, {}, {}, {}, {}, {}, {}) }
+        compose.onRoot().captureRoboImage("$dir/onb-5-settings.png")
+    }
+
+    @Test fun settingsScreenLightSkin() {
+        show { com.example.ui.screens.SettingsAboutContent(skin, {}, {}, {}, {}, {}, {}, {}) }
+        compose.onRoot().captureRoboImage("$dir/onb-6-settings-scrollwheel.png")
+    }
+
+    @Test fun shareDialog() {
+        show { Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xFF04161A)).padding(20.dp)) {
+            com.example.ui.screens.ShareAppContent(aqua, com.example.ui.screens.DEFAULT_SHARE_MESSAGE, {}, {}, {}) } }
+        compose.onRoot().captureRoboImage("$dir/onb-7-share.png")
+    }
+
+    @Test fun whatsNew() {
+        show { Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xFF04161A)).padding(20.dp)) {
+            com.example.ui.screens.WhatsNewContent(aqua, {}) } }
+        compose.onRoot().captureRoboImage("$dir/onb-8-whatsnew.png")
     }
 }
